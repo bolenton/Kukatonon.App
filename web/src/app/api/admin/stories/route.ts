@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/supabase/admin';
 import { validateStoryContent } from '@/lib/validation';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { createSlug } from '@/lib/slugify';
+import { createServiceClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   const { error, status, supabase } = await requireAdmin();
@@ -10,8 +11,10 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const statusFilter = searchParams.get('status');
+  const search = searchParams.get('search')?.trim();
+  const featured = searchParams.get('featured');
   const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '20');
+  const limit = parseInt(searchParams.get('limit') || '25');
   const offset = (page - 1) * limit;
 
   let query = supabase
@@ -24,14 +27,46 @@ export async function GET(request: NextRequest) {
     query = query.eq('status', statusFilter);
   }
 
+  if (featured === 'true') {
+    query = query.eq('is_featured', true);
+  }
+
+  if (search) {
+    query = query.or(`title.ilike.%${search}%,honoree_name.ilike.%${search}%,submitted_by_name.ilike.%${search}%`);
+  }
+
   const { data, error: queryError, count } = await query;
 
   if (queryError) {
     return NextResponse.json({ error: queryError.message }, { status: 500 });
   }
 
+  // Resolve approver names from admins table
+  const stories = data || [];
+  const approverIds = [...new Set(stories.map((s) => s.approved_by).filter(Boolean))] as string[];
+
+  let approverMap: Record<string, string> = {};
+  if (approverIds.length > 0) {
+    const serviceClient = await createServiceClient();
+    const { data: admins } = await serviceClient
+      .from('admins')
+      .select('user_id, full_name')
+      .in('user_id', approverIds);
+
+    if (admins) {
+      approverMap = Object.fromEntries(
+        admins.map((a) => [a.user_id, a.full_name || 'Unknown'])
+      );
+    }
+  }
+
+  const enriched = stories.map((story) => ({
+    ...story,
+    approver_name: story.approved_by ? (approverMap[story.approved_by] || null) : null,
+  }));
+
   return NextResponse.json({
-    stories: data,
+    stories: enriched,
     pagination: { page, limit, total: count || 0, totalPages: Math.ceil((count || 0) / limit) },
   });
 }
@@ -60,6 +95,7 @@ export async function POST(request: NextRequest) {
       is_featured: body.is_featured || false,
       status: 'approved',
       source_type: 'admin',
+      submitted_by_name: user.admin.full_name || null,
       approved_by: user.id,
       approved_at: new Date().toISOString(),
     })
