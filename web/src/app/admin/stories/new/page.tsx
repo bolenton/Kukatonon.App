@@ -26,6 +26,7 @@ export default function CreateStoryPage() {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
+  const [publishNow, setPublishNow] = useState(true);
   const [youtubeInput, setYoutubeInput] = useState("");
 
   const handleCreate = async () => {
@@ -44,12 +45,12 @@ export default function CreateStoryPage() {
         media_items: mediaItems,
         cover_image_url: coverImageUrl || undefined,
         is_featured: isFeatured,
+        status: publishNow ? 'approved' : 'pending',
       }),
     });
 
     if (res.ok) {
-      const data = await res.json();
-      router.push(`/admin/stories/${data.id}`);
+      router.push(`/admin/stories?created=true`);
     } else {
       const data = await res.json();
       if (data.errors) {
@@ -126,15 +127,28 @@ export default function CreateStoryPage() {
               className="w-full px-4 py-2.5 rounded-lg border focus:border-earth-gold focus:ring-1 focus:ring-earth-gold outline-none resize-none"
             />
           </div>
-          <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-gray-700">Featured</label>
-            <button
-              type="button"
-              onClick={() => setIsFeatured(!isFeatured)}
-              className={`w-10 h-6 rounded-full transition-colors ${isFeatured ? "bg-earth-gold" : "bg-gray-200"}`}
-            >
-              <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${isFeatured ? "translate-x-4.5" : "translate-x-0.5"}`} />
-            </button>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-gray-700">Featured</label>
+              <button
+                type="button"
+                onClick={() => setIsFeatured(!isFeatured)}
+                className={`w-10 h-6 rounded-full transition-colors ${isFeatured ? "bg-earth-gold" : "bg-gray-200"}`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${isFeatured ? "translate-x-4.5" : "translate-x-0.5"}`} />
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-gray-700">Publish immediately</label>
+              <button
+                type="button"
+                onClick={() => setPublishNow(!publishNow)}
+                className={`w-10 h-6 rounded-full transition-colors ${publishNow ? "bg-earth-gold" : "bg-gray-200"}`}
+              >
+                <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${publishNow ? "translate-x-4.5" : "translate-x-0.5"}`} />
+              </button>
+              <span className="text-xs text-gray-400">{publishNow ? "Will be visible to the public" : "Saved as draft"}</span>
+            </div>
           </div>
         </div>
 
@@ -198,9 +212,9 @@ export default function CreateStoryPage() {
         <button
           onClick={handleCreate}
           disabled={saving}
-          className="px-8 py-3 bg-earth-gold text-earth-darkest rounded-lg font-semibold hover:bg-earth-amber disabled:opacity-60 transition-colors text-lg"
+          className="px-8 py-3 bg-earth-amber text-earth-darkest rounded-lg font-semibold hover:bg-earth-orange disabled:opacity-60 transition-colors text-lg"
         >
-          {saving ? "Creating..." : "Create & Publish Story"}
+          {saving ? "Creating..." : publishNow ? "Create & Publish" : "Save as Draft"}
         </button>
       </div>
     </div>

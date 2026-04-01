@@ -136,7 +136,7 @@ export default function AdminUsersPage() {
         </div>
         <button
           onClick={() => { setShowAddForm(!showAddForm); setEditingId(null); setForm(emptyForm); }}
-          className="px-4 py-2 bg-earth-gold text-earth-darkest rounded-lg text-sm font-medium hover:bg-earth-amber transition-colors"
+          className="px-4 py-2 bg-earth-amber text-earth-darkest rounded-lg text-sm font-medium hover:bg-earth-orange transition-colors"
         >
           {showAddForm ? "Cancel" : "Add User"}
         </button>
@@ -199,7 +199,7 @@ export default function AdminUsersPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 bg-earth-gold text-earth-darkest rounded-lg text-sm font-medium hover:bg-earth-amber transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-earth-amber text-earth-darkest rounded-lg text-sm font-medium hover:bg-earth-orange transition-colors disabled:opacity-50"
             >
               {submitting ? "Creating..." : "Create User"}
             </button>

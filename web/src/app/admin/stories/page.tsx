@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { Story, StoryStatus } from "@/types/database";
@@ -35,6 +35,7 @@ function AdminStoriesContent() {
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
   const [page, setPage] = useState(parseInt(searchParams.get("page") || "1"));
+  const [successMsg, setSuccessMsg] = useState(searchParams.get("created") === "true" ? "Story created successfully." : "");
 
   const loadStories = useCallback(async () => {
     setLoading(true);
@@ -94,6 +95,16 @@ function AdminStoriesContent() {
     }
   }
 
+  async function updateStatus(id: string, action: "approve" | "reject") {
+    const res = await fetch(`/api/admin/stories/${id}/${action}`, { method: "POST" });
+    if (res.ok) {
+      const newStatus = action === "approve" ? "approved" : "rejected";
+      setStories((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, status: newStatus as "approved" | "rejected" } : s))
+      );
+    }
+  }
+
   const statusColors: Record<string, string> = {
     pending: "bg-amber-100 text-amber-800",
     approved: "bg-green-100 text-green-800",
@@ -111,11 +122,22 @@ function AdminStoriesContent() {
         </div>
         <Link
           href="/admin/stories/new"
-          className="px-4 py-2 bg-earth-gold text-earth-darkest rounded-lg text-sm font-medium hover:bg-earth-amber transition-colors"
+          className="px-4 py-2 bg-earth-amber text-earth-darkest rounded-lg text-sm font-medium hover:bg-earth-orange transition-colors"
         >
           + Create Story
         </Link>
       </div>
+
+      {successMsg && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-center justify-between">
+          <span>{successMsg}</span>
+          <button onClick={() => setSuccessMsg("")} className="text-green-500 hover:text-green-700">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -182,7 +204,7 @@ function AdminStoriesContent() {
                     <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Approver</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Featured</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Date</th>
-                    <th className="text-right px-4 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -223,13 +245,12 @@ function AdminStoriesContent() {
                       <td className="px-4 py-3 text-xs text-gray-500 hidden sm:table-cell whitespace-nowrap">
                         {new Date(story.created_at).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          href={`/admin/stories/${story.id}`}
-                          className="text-earth-gold hover:text-earth-amber text-sm font-medium"
-                        >
-                          Edit
-                        </Link>
+                      <td className="px-4 py-3">
+                        <ActionMenu
+                          story={story}
+                          onApprove={() => updateStatus(story.id, "approve")}
+                          onReject={() => updateStatus(story.id, "reject")}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -291,6 +312,66 @@ function AdminStoriesContent() {
             </div>
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+function ActionMenu({
+  story,
+  onApprove,
+  onReject,
+}: {
+  story: EnrichedStory;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div className="relative inline-block" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+      >
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+          <Link
+            href={`/admin/stories/${story.id}`}
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            Edit
+          </Link>
+          {story.status !== "approved" && (
+            <button
+              onClick={() => { onApprove(); setOpen(false); }}
+              className="block w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50"
+            >
+              Approve
+            </button>
+          )}
+          {story.status !== "rejected" && (
+            <button
+              onClick={() => { onReject(); setOpen(false); }}
+              className="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+            >
+              Reject
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

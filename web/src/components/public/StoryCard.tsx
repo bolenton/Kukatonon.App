@@ -45,7 +45,7 @@ export default function StoryCard({ story, featured = false }: StoryCardProps) {
 
           {/* Featured badge */}
           {story.is_featured && (
-            <div className="absolute top-3 left-3 bg-earth-gold text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+            <div className="absolute top-3 left-3 bg-earth-amber text-earth-darkest text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
               Featured
             </div>
           )}

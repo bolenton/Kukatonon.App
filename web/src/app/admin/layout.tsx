@@ -18,6 +18,7 @@ const allNavItems: NavItem[] = [
   { href: "/admin/stories", label: "All Stories", icon: "M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" },
   { href: "/admin/stories/new", label: "Create Story", icon: "M12 4v16m8-8H4" },
   { href: "/admin/users", label: "Users", icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z", superAdminOnly: true },
+  { href: "/admin/settings", label: "Settings", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z", superAdminOnly: true },
 ];
 
 export default function AdminLayout({
@@ -66,7 +67,7 @@ export default function AdminLayout({
         <div className="p-6 border-b border-gray-200">
           <Link href="/admin" className="flex items-center gap-3">
             <div className="w-8 h-8 bg-earth-gold rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm font-serif">K</span>
+              <span className="text-earth-darkest font-bold text-sm font-serif">K</span>
             </div>
             <div>
               <h1 className="font-bold font-serif text-gray-900">Kukatonon</h1>

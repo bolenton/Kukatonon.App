@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-14 h-14 bg-earth-gold rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-2xl font-serif">K</span>
+              <span className="text-earth-darkest font-bold text-2xl font-serif">K</span>
             </div>
             <h1 className="font-serif text-2xl font-bold text-gray-900">
               Admin Login
@@ -84,7 +84,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-earth-gold hover:bg-earth-amber disabled:opacity-60 text-white py-3 rounded-lg font-semibold transition-colors"
+              className="w-full bg-earth-amber hover:bg-earth-orange disabled:opacity-60 text-earth-darkest py-3 rounded-lg font-semibold transition-colors"
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>

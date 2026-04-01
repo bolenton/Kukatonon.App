@@ -293,7 +293,7 @@ export default function AdminStoryDetailPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-2.5 bg-earth-gold text-earth-darkest rounded-lg font-medium hover:bg-earth-amber disabled:opacity-60 transition-colors"
+            className="px-6 py-2.5 bg-earth-amber text-earth-darkest rounded-lg font-medium hover:bg-earth-orange disabled:opacity-60 transition-colors"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>
