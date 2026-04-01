@@ -20,8 +20,11 @@ export default function TiptapEditor({
   placeholder = "Tell their story...",
 }: TiptapEditorProps) {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        link: false,
+      }),
       ImageExtension,
       LinkExtension.configure({
         openOnClick: false,
