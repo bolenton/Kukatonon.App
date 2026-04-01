@@ -62,15 +62,15 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-earth-darkest text-earth-cream hidden lg:flex flex-col fixed inset-y-0 left-0 z-30">
-        <div className="p-6 border-b border-earth-gold/20">
+      <aside className="w-64 bg-white border-r border-gray-200 hidden lg:flex flex-col fixed inset-y-0 left-0 z-30">
+        <div className="p-6 border-b border-gray-200">
           <Link href="/admin" className="flex items-center gap-3">
             <div className="w-8 h-8 bg-earth-gold rounded-lg flex items-center justify-center">
-              <span className="text-earth-darkest font-bold text-sm font-serif">K</span>
+              <span className="text-white font-bold text-sm font-serif">K</span>
             </div>
             <div>
-              <h1 className="font-bold font-serif">Kukatonon</h1>
-              <p className="text-xs text-earth-cream/60">Admin Panel</p>
+              <h1 className="font-bold font-serif text-gray-900">Kukatonon</h1>
+              <p className="text-xs text-gray-400">Admin Panel</p>
             </div>
           </Link>
         </div>
@@ -82,8 +82,8 @@ export default function AdminLayout({
               href={item.href}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors ${
                 pathname === item.href
-                  ? "bg-earth-gold text-earth-darkest font-medium"
-                  : "text-earth-cream/70 hover:text-earth-cream hover:bg-earth-brown/50"
+                  ? "bg-earth-gold/10 text-earth-gold font-medium"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,13 +94,13 @@ export default function AdminLayout({
           ))}
         </nav>
 
-        <div className="p-4 border-t border-earth-gold/20">
+        <div className="p-4 border-t border-gray-200">
           <Link
             href="/admin/profile"
-            className={`flex items-center gap-3 px-4 py-2 text-sm transition-colors ${
+            className={`flex items-center gap-3 px-4 py-2 text-sm transition-colors rounded-lg ${
               pathname === "/admin/profile"
-                ? "text-earth-cream"
-                : "text-earth-cream/60 hover:text-earth-cream"
+                ? "text-earth-gold font-medium"
+                : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
             }`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +110,7 @@ export default function AdminLayout({
           </Link>
           <Link
             href="/"
-            className="flex items-center gap-3 px-4 py-2 text-earth-cream/60 hover:text-earth-cream text-sm transition-colors"
+            className="flex items-center gap-3 px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 text-sm transition-colors rounded-lg"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -119,7 +119,7 @@ export default function AdminLayout({
           </Link>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-2 text-earth-cream/60 hover:text-red-400 text-sm transition-colors w-full"
+            className="flex items-center gap-3 px-4 py-2 text-gray-500 hover:text-red-600 hover:bg-red-50 text-sm transition-colors w-full rounded-lg"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -130,9 +130,9 @@ export default function AdminLayout({
       </aside>
 
       {/* Mobile header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-earth-darkest text-earth-cream border-b border-earth-gold/20">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200">
         <div className="flex items-center justify-between px-4 h-14">
-          <Link href="/admin" className="font-bold font-serif">
+          <Link href="/admin" className="font-bold font-serif text-gray-900">
             Kukatonon Admin
           </Link>
           <div className="flex items-center gap-2">
@@ -141,7 +141,7 @@ export default function AdminLayout({
                 key={item.href}
                 href={item.href}
                 className={`p-2 rounded-lg ${
-                  pathname === item.href ? "bg-earth-gold text-earth-darkest" : "text-earth-cream/70"
+                  pathname === item.href ? "bg-earth-gold/10 text-earth-gold" : "text-gray-400"
                 }`}
                 title={item.label}
               >
@@ -153,7 +153,7 @@ export default function AdminLayout({
             <Link
               href="/admin/profile"
               className={`p-2 rounded-lg ${
-                pathname === "/admin/profile" ? "bg-earth-gold text-earth-darkest" : "text-earth-cream/70"
+                pathname === "/admin/profile" ? "bg-earth-gold/10 text-earth-gold" : "text-gray-400"
               }`}
               title="Profile"
             >

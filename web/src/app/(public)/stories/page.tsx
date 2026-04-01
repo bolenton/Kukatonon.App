@@ -29,13 +29,13 @@ export default async function StoriesPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Page Header */}
       <div className="text-center mb-12">
-        <p className="text-earth-gold text-sm tracking-[0.2em] uppercase mb-2">
+        <p className="text-earth-gold text-sm tracking-[0.2em] uppercase font-medium mb-2">
           Memorial Stories
         </p>
-        <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-earth-dark mb-4">
+        <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
           Lives Remembered
         </h1>
-        <p className="text-earth-warm/80 max-w-2xl mx-auto">
+        <p className="text-gray-500 max-w-2xl mx-auto">
           {total > 0
             ? `${total} ${total === 1 ? "story" : "stories"} shared in memory of those we lost.`
             : "Stories will appear here once they are shared and approved."}
@@ -56,10 +56,10 @@ export default async function StoriesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
             </svg>
           </div>
-          <h3 className="font-serif text-xl text-earth-warm mb-2">
+          <h3 className="font-serif text-xl text-gray-600 mb-2">
             No Stories Yet
           </h3>
-          <p className="text-earth-warm/70">
+          <p className="text-gray-400">
             Be the first to share a memorial story.
           </p>
         </div>

@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Earth tones palette inspired by event flyer */
+  /* Earth tones palette — used as accents on a white base */
   --color-earth-darkest: #1a0f0a;
   --color-earth-dark: #2c1810;
   --color-earth-brown: #3b2418;
@@ -10,12 +10,12 @@
   --color-earth-gold: #b8860b;
   --color-earth-amber: #daa520;
   --color-earth-cream: #faebd7;
-  --color-earth-light: #fff8dc;
+  --color-earth-light: #fdf8f3;
   --color-earth-olive: #6b8e23;
   --color-earth-forest: #2d5016;
 
-  --background: var(--color-earth-light);
-  --foreground: var(--color-earth-dark);
+  --background: #ffffff;
+  --foreground: #1a1a1a;
 }
 
 @theme inline {
@@ -33,7 +33,7 @@
   --color-earth-gold: #b8860b;
   --color-earth-amber: #daa520;
   --color-earth-cream: #faebd7;
-  --color-earth-light: #fff8dc;
+  --color-earth-light: #fdf8f3;
   --color-earth-olive: #6b8e23;
   --color-earth-forest: #2d5016;
 }
@@ -52,6 +52,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Rich text content styles */
 .prose-memorial {
   line-height: 1.8;
+  color: #374151;
 }
 .prose-memorial p {
   margin-bottom: 1rem;
@@ -60,13 +61,14 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
   font-family: 'Playfair Display', Georgia, serif;
+  color: #1a1a1a;
 }
 .prose-memorial blockquote {
   border-left: 4px solid var(--color-earth-gold);
   padding-left: 1rem;
   margin: 1.5rem 0;
   font-style: italic;
-  color: var(--color-earth-warm);
+  color: #6b7280;
 }
 .prose-memorial ul, .prose-memorial ol {
   margin: 1rem 0;
@@ -111,7 +113,7 @@ h1, h2, h3, h4, h5, h6 {
 .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #8b7355;
+  color: #9ca3af;
   pointer-events: none;
   height: 0;
 }
