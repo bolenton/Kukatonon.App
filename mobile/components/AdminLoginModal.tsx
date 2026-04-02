@@ -104,7 +104,7 @@ export default function AdminLoginModal({ visible, onClose }: Props) {
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color={sc.earth.darkest} />
+                <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.buttonText}>Sign In</Text>
               )}
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    color: sc.earth.darkest,
+    color: '#fff',
     fontSize: 16,
     fontWeight: '700',
   },

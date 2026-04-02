@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import StoryComposer from "@/components/editor/composer/StoryComposer";
+import StoryBlockRenderer from "@/components/public/StoryBlockRenderer";
+import RichTextRenderer from "@/components/public/RichTextRenderer";
 import type { Story, Category } from "@/types/database";
 import type { ContentBlock } from "@/types/blocks";
 
@@ -22,6 +24,7 @@ export default function AdminStoryDetailPage() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
 
   useEffect(() => {
@@ -281,6 +284,13 @@ export default function AdminStoryDetailPage() {
             {saving ? "Saving..." : "Save Changes"}
           </button>
 
+          <button
+            onClick={() => setShowPreview(true)}
+            className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+          >
+            Preview
+          </button>
+
           {story.status !== "approved" && (
             <button
               onClick={handleApprove}
@@ -300,6 +310,46 @@ export default function AdminStoryDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowPreview(false)}>
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white rounded-t-2xl z-10">
+              <h2 className="font-serif text-lg font-bold text-gray-900">Preview</h2>
+              <button onClick={() => setShowPreview(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              {coverImageUrl && (
+                <img src={coverImageUrl} alt="Cover" className="w-full rounded-xl mb-6 max-h-80 object-cover" />
+              )}
+              <p className="text-earth-gold text-xs font-semibold uppercase tracking-wider mb-2">In Memory of</p>
+              <h1 className="font-serif text-3xl font-bold text-gray-900 mb-2">{honoreeName}</h1>
+              <h2 className="text-gray-500 text-lg mb-4">{title}</h2>
+              {summary && (
+                <div className="border-l-4 border-earth-gold pl-4 mb-6">
+                  <p className="text-gray-600 italic font-serif leading-relaxed">{summary}</p>
+                </div>
+              )}
+              <div className="space-y-6">
+                {contentBlocks.length > 0 ? (
+                  contentBlocks.map((block) => (
+                    <StoryBlockRenderer key={block.id} block={block} />
+                  ))
+                ) : story?.content_html ? (
+                  <RichTextRenderer html={story.content_html} />
+                ) : (
+                  <p className="text-gray-400 italic">No content yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
