@@ -4,11 +4,11 @@ import { sanitizeHtml } from '@/lib/sanitize';
 import { createSlug } from '@/lib/slugify';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { error, status, supabase } = await requireAdmin();
+  const { error, status, supabase } = await requireAdmin(request);
   if (error) return NextResponse.json({ error }, { status });
 
   const { data, error: queryError } = await supabase
@@ -29,7 +29,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { error, status, user, supabase } = await requireAdmin();
+  const { error, status, user, supabase } = await requireAdmin(request);
   if (error || !user) return NextResponse.json({ error }, { status });
 
   const body = await request.json();
