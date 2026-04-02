@@ -3,7 +3,8 @@ import { createClient } from './server';
 export async function requireAdmin(request?: Request) {
   // If a Bearer token is provided (mobile), use token-based auth
   if (request) {
-    const authHeader = request.headers.get('authorization');
+    // Check both standard and custom header (Vercel strips Authorization)
+    const authHeader = request.headers.get('authorization') || request.headers.get('x-admin-token');
 
     const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
     if (bearerToken) {
