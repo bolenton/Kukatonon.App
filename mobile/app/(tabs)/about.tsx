@@ -7,7 +7,7 @@ import AdminLoginModal from '../../components/AdminLoginModal';
 
 export default function AboutScreen() {
   const { mode, colors, toggle } = useTheme();
-  const { isAdmin, logout } = useAuth();
+  const { isAdmin } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
   const tapCount = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -127,22 +127,6 @@ export default function AboutScreen() {
           </Pressable>
         </View>
       </View>
-
-      {/* Admin logout (only visible when logged in) */}
-      {isAdmin && (
-        <View style={[styles.themeSection, { borderTopColor: colors.border }]}>
-          <View style={styles.themeInfo}>
-            <Text style={[styles.themeLabel, { color: colors.textSecondary }]}>Admin</Text>
-            <Text style={[styles.themeName, { color: colors.textMuted }]}>Logged in</Text>
-          </View>
-          <Pressable
-            onPress={logout}
-            style={{ backgroundColor: '#fef2f2', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
-          >
-            <Text style={{ color: '#dc2626', fontSize: 13, fontWeight: '600' }}>Logout</Text>
-          </Pressable>
-        </View>
-      )}
 
       <View style={{ height: 40 }} />
 
