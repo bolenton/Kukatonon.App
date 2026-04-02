@@ -6,8 +6,9 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import StoryCard from '../../components/StoryCard';
 import { fetchStories, type PublicStory } from '../../lib/api';
 import { colors as staticColors, fonts } from '../../constants/theme';
@@ -117,8 +118,14 @@ export default function HomeScreen() {
       <View style={[styles.cta, mode === 'light' && { backgroundColor: colors.gray[100] }]}>
         <Text style={[styles.ctaTitle, mode === 'light' && { color: colors.text }]}>Help Us Remember</Text>
         <Text style={[styles.ctaDesc, mode === 'light' && { color: colors.textSecondary }]}>
-          Every story shared is a life honored. Visit kukatonon.app to submit a memorial story.
+          Every story shared is a life honored. Share a memorial story today.
         </Text>
+        <TouchableOpacity
+          style={[styles.ctaBtn, { backgroundColor: colors.earth.gold }]}
+          onPress={() => router.push('/submit')}
+        >
+          <Text style={styles.ctaBtnText}>Share a Story</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={{ height: 20 }} />
@@ -145,5 +152,7 @@ const styles = StyleSheet.create({
   viewAllText: { color: sc.earth.gold, fontWeight: '600', fontSize: 14 },
   cta: { backgroundColor: sc.earth.darkest, margin: 20, borderRadius: 20, padding: 28, alignItems: 'center' },
   ctaTitle: { fontFamily: fonts.serif, fontSize: 22, fontWeight: '700', color: sc.earth.cream, marginBottom: 12 },
-  ctaDesc: { fontSize: 14, color: sc.earth.cream, opacity: 0.7, textAlign: 'center', lineHeight: 22 },
+  ctaDesc: { fontSize: 14, color: sc.earth.cream, opacity: 0.7, textAlign: 'center', lineHeight: 22, marginBottom: 16 },
+  ctaBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 },
+  ctaBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

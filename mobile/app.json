@@ -18,8 +18,13 @@
       "bundleIdentifier": "app.kukatonon.mobile",
       "associatedDomains": [
         "applinks:kukatonon.app",
+        "applinks:www.kukatonon.app",
+        "applinks:kukatonon.app",
         "applinks:www.kukatonon.app"
-      ]
+      ],
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -44,7 +49,10 @@
               "pathPrefix": "/stories/"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -52,6 +60,14 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-router"]
+    "plugins": [
+      "expo-router"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1c2a7f8f-188b-48f7-9607-a6703c9861e5"
+      }
+    }
   }
 }
