@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import RichTextRenderer from "@/components/public/RichTextRenderer";
 import YouTubeEmbed from "@/components/public/YouTubeEmbed";
 import MediaGallery from "@/components/public/MediaGallery";
+import StoryBlockRenderer from "@/components/public/StoryBlockRenderer";
 import Link from "next/link";
 import type { PublicStory } from "@/types/database";
 
@@ -122,27 +123,35 @@ export default async function StoryDetailPage({
           </div>
         )}
 
-        {/* Rich text content */}
-        {story.content_html && (
-          <div className="mb-10">
-            <RichTextRenderer html={story.content_html} />
-          </div>
-        )}
-
-        {/* YouTube embeds */}
-        {story.youtube_urls && story.youtube_urls.length > 0 && (
-          <div className="space-y-6 mb-10">
-            {story.youtube_urls.map((url, index) => (
-              <YouTubeEmbed key={index} url={url} />
+        {/* Block-based content (new) or legacy rendering */}
+        {story.content_blocks && story.content_blocks.length > 0 ? (
+          <div className="space-y-8 mb-10">
+            {story.content_blocks.map((block) => (
+              <StoryBlockRenderer key={block.id} block={block} />
             ))}
           </div>
-        )}
+        ) : (
+          <>
+            {story.content_html && (
+              <div className="mb-10">
+                <RichTextRenderer html={story.content_html} />
+              </div>
+            )}
 
-        {/* Media gallery */}
-        {story.media_items && story.media_items.length > 0 && (
-          <div className="mb-10">
-            <MediaGallery items={story.media_items} />
-          </div>
+            {story.youtube_urls && story.youtube_urls.length > 0 && (
+              <div className="space-y-6 mb-10">
+                {story.youtube_urls.map((url, index) => (
+                  <YouTubeEmbed key={index} url={url} />
+                ))}
+              </div>
+            )}
+
+            {story.media_items && story.media_items.length > 0 && (
+              <div className="mb-10">
+                <MediaGallery items={story.media_items} />
+              </div>
+            )}
+          </>
         )}
 
         {/* Back link */}

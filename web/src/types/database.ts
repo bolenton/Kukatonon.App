@@ -1,3 +1,5 @@
+import type { ContentBlock } from './blocks';
+
 export type StoryStatus = 'pending' | 'approved' | 'rejected';
 export type SourceType = 'admin' | 'public_submission';
 export type AdminRole = 'super_admin' | 'moderator';
@@ -32,6 +34,7 @@ export interface Story {
   review_notes: string | null;
   approved_by: string | null;
   approved_at: string | null;
+  content_blocks: ContentBlock[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -84,6 +87,7 @@ export interface StoryCreatePayload {
   media_items?: MediaItem[];
   cover_image_url?: string;
   is_featured?: boolean;
+  content_blocks?: ContentBlock[] | null;
 }
 
 export interface StoryUpdatePayload extends Partial<StoryCreatePayload> {

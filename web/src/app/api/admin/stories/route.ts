@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
       submitted_by_name: user.admin.full_name || null,
       approved_by: body.status === 'pending' ? null : user.id,
       approved_at: body.status === 'pending' ? null : new Date().toISOString(),
+      content_blocks: body.content_blocks || null,
     })
     .select()
     .single();
