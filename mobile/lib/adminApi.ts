@@ -14,6 +14,7 @@ export async function adminFetch(token: string, path: string, options?: RequestI
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
+      'x-admin-token': `Bearer ${token}`,
       ...(options?.headers || {}),
     },
   });
