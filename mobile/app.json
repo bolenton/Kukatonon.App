@@ -14,7 +14,7 @@
       "backgroundColor": "#1a0f0a"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "app.kukatonon.mobile",
       "associatedDomains": [
         "applinks:kukatonon.app",
