@@ -1,27 +1,31 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
-import { colors } from '../../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useTheme } from '../../constants/ThemeContext';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         tabBarStyle: {
-          backgroundColor: colors.earth.darkest,
-          borderTopColor: colors.earth.brown,
-          paddingBottom: 4,
-          height: 56,
+          backgroundColor: colors.tabBarBg,
+          borderTopColor: colors.tabBarBorder,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          height: 56 + (insets.bottom > 0 ? insets.bottom : 8),
         },
-        tabBarActiveTintColor: colors.earth.gold,
-        tabBarInactiveTintColor: colors.earth.warm,
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
         },
         headerStyle: {
-          backgroundColor: colors.earth.darkest,
+          backgroundColor: colors.headerBg,
         },
-        headerTintColor: colors.earth.cream,
+        headerTintColor: colors.headerText,
         headerTitleStyle: {
           fontFamily: 'Georgia',
           fontWeight: '700',
@@ -34,8 +38,8 @@ export default function TabLayout() {
         options={{
           title: 'Kukatonon',
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 22 }}>{'\u2302'}</Text>
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="home" size={size} color={color} />
           ),
         }}
       />
@@ -43,8 +47,8 @@ export default function TabLayout() {
         name="stories"
         options={{
           title: 'Stories',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 22 }}>{'\u2261'}</Text>
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="auto-stories" size={size} color={color} />
           ),
         }}
       />
@@ -52,8 +56,8 @@ export default function TabLayout() {
         name="about"
         options={{
           title: 'About',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 22 }}>{'\u2139'}</Text>
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="info-outline" size={size} color={color} />
           ),
         }}
       />

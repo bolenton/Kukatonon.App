@@ -14,11 +14,14 @@ import RenderHtml from 'react-native-render-html';
 import { WebView } from 'react-native-webview';
 import { fetchStory, type PublicStory } from '../../lib/api';
 import { getEmbedUrl } from '../../lib/youtube';
-import { colors, fonts } from '../../constants/theme';
+import { colors as sc, fonts } from '../../constants/theme';
+import { useTheme } from '../../constants/ThemeContext';
+import ShareStory from '../../components/ShareStory';
 
 export default function StoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
+  const { colors } = useTheme();
   const [story, setStory] = useState<PublicStory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +67,7 @@ export default function StoryDetailScreen() {
           title: story.honoree_name,
         }}
       />
-      <ScrollView style={styles.container}>
+      <ScrollView style={[styles.container, { backgroundColor: colors.bg }]}>
         {/* Cover Image */}
         {story.cover_image_url ? (
           <View style={styles.coverContainer}>
@@ -103,6 +106,11 @@ export default function StoryDetailScreen() {
             })}
             {story.submitted_by_name ? ` \u00b7 by ${story.submitted_by_name}` : ''}
           </Text>
+          <ShareStory
+            storyId={story.id}
+            storySlug={story.slug}
+            honoreeName={story.honoree_name}
+          />
         </View>
 
         {/* Summary */}
@@ -211,146 +219,28 @@ export default function StoryDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.earth.light,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.earth.light,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: colors.earth.warm,
-    textAlign: 'center',
-  },
-  coverContainer: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    position: 'relative',
-  },
-  coverImage: {
-    width: '100%',
-    height: '100%',
-  },
-  coverOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '70%',
-    backgroundColor: 'transparent',
-    // Gradient effect via layered views
-  },
-  coverContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    backgroundColor: 'rgba(26, 15, 10, 0.7)',
-  },
-  noCoverHeader: {
-    backgroundColor: colors.earth.darkest,
-    padding: 24,
-    paddingTop: 16,
-  },
-  memoryLabel: {
-    color: colors.earth.amber,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 2,
-    marginBottom: 6,
-  },
-  coverName: {
-    fontFamily: fonts.serif,
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.earth.cream,
-    marginBottom: 4,
-  },
-  coverTitle: {
-    fontSize: 15,
-    color: colors.earth.cream,
-    opacity: 0.9,
-  },
-  meta: {
-    padding: 20,
-    paddingBottom: 8,
-  },
-  metaText: {
-    fontSize: 12,
-    color: colors.earth.warm,
-    opacity: 0.6,
-  },
-  summaryContainer: {
-    marginHorizontal: 20,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.earth.gold,
-    paddingLeft: 14,
-  },
-  summaryText: {
-    fontFamily: fonts.serif,
-    fontSize: 16,
-    fontStyle: 'italic',
-    color: colors.earth.warm,
-    lineHeight: 26,
-  },
-  htmlContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  videoContainer: {
-    marginHorizontal: 20,
-    marginBottom: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-    aspectRatio: 16 / 9,
-  },
-  webview: {
-    flex: 1,
-  },
-  galleryContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    gap: 8,
-    marginBottom: 16,
-  },
-  galleryImage: {
-    width: '48%',
-    aspectRatio: 4 / 3,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  lightbox: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.92)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  lightboxImage: {
-    width: '100%',
-    height: '80%',
-  },
-  lightboxClose: {
-    color: colors.white,
-    marginTop: 20,
-    opacity: 0.6,
-    fontSize: 14,
-  },
+  container: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: sc.earth.light },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  errorText: { fontSize: 16, color: sc.earth.warm, textAlign: 'center' },
+  coverContainer: { width: '100%', aspectRatio: 16 / 9, position: 'relative' },
+  coverImage: { width: '100%', height: '100%' },
+  coverOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '70%', backgroundColor: 'transparent' },
+  coverContent: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: 'rgba(26, 15, 10, 0.7)' },
+  noCoverHeader: { backgroundColor: sc.earth.darkest, padding: 24, paddingTop: 16 },
+  memoryLabel: { color: sc.earth.amber, fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 6 },
+  coverName: { fontFamily: fonts.serif, fontSize: 28, fontWeight: '700', color: sc.earth.cream, marginBottom: 4 },
+  coverTitle: { fontSize: 15, color: sc.earth.cream, opacity: 0.9 },
+  meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, paddingBottom: 8 },
+  metaText: { fontSize: 12, color: sc.earth.warm, opacity: 0.6 },
+  summaryContainer: { marginHorizontal: 20, marginBottom: 16, borderLeftWidth: 4, borderLeftColor: sc.earth.gold, paddingLeft: 14 },
+  summaryText: { fontFamily: fonts.serif, fontSize: 16, fontStyle: 'italic', color: sc.earth.warm, lineHeight: 26 },
+  htmlContainer: { paddingHorizontal: 20, marginBottom: 16 },
+  videoContainer: { marginHorizontal: 20, marginBottom: 16, borderRadius: 12, overflow: 'hidden', aspectRatio: 16 / 9 },
+  webview: { flex: 1 },
+  galleryContainer: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, gap: 8, marginBottom: 16 },
+  galleryImage: { width: '48%', aspectRatio: 4 / 3, borderRadius: 12, overflow: 'hidden' },
+  lightbox: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
+  lightboxImage: { width: '100%', height: '80%' },
+  lightboxClose: { color: sc.white, marginTop: 20, opacity: 0.6, fontSize: 14 },
 });

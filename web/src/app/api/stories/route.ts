@@ -4,7 +4,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 const PUBLIC_FIELDS = `
   id, title, slug, honoree_name, summary, content_html,
   youtube_urls, media_items, cover_image_url, content_blocks,
-  status, is_featured, source_type, submitted_by_name,
+  category_ids, status, is_featured, source_type, submitted_by_name,
   created_at, updated_at
 `;
 
@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '12');
   const featured = searchParams.get('featured');
+  const category = searchParams.get('category');
+  const search = searchParams.get('search')?.trim();
   const offset = (page - 1) * limit;
 
   let query = supabase
@@ -26,6 +28,14 @@ export async function GET(request: NextRequest) {
 
   if (featured === 'true') {
     query = query.eq('is_featured', true);
+  }
+
+  if (category) {
+    query = query.contains('category_ids', [category]);
+  }
+
+  if (search) {
+    query = query.or(`title.ilike.%${search}%,honoree_name.ilike.%${search}%,summary.ilike.%${search}%`);
   }
 
   const { data, error, count } = await query;

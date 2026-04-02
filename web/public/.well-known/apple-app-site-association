@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "M899BRL953.app.kukatonon.mobile",
+        "paths": ["/stories/*"]
+      }
+    ]
+  }
+}
