@@ -42,6 +42,12 @@ function RootStack() {
             headerBackTitle: 'Back',
           }}
         />
+        <Stack.Screen
+          name="legal/[page]"
+          options={{
+            headerBackTitle: 'Back',
+          }}
+        />
       </Stack>
     </>
   );

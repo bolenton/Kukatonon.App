@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, Linking, Pressable } from 'react-native';
+import { router } from 'expo-router';
 import { useTheme } from '../../constants/ThemeContext';
 import { useAuth } from '../../constants/AuthContext';
 import { fonts } from '../../constants/theme';
@@ -105,11 +106,11 @@ export default function AboutScreen() {
 
         {/* Legal Links */}
         <View style={styles.legalRow}>
-          <Pressable onPress={() => Linking.openURL('https://kukatonon.app/privacy')}>
+          <Pressable onPress={() => router.push('/legal/privacy')}>
             <Text style={[styles.legalLink, { color: colors.textMuted }]}>Privacy Policy</Text>
           </Pressable>
           <Text style={[styles.legalDot, { color: colors.textMuted }]}>&middot;</Text>
-          <Pressable onPress={() => Linking.openURL('https://kukatonon.app/terms')}>
+          <Pressable onPress={() => router.push('/legal/terms')}>
             <Text style={[styles.legalLink, { color: colors.textMuted }]}>Terms of Service</Text>
           </Pressable>
         </View>
