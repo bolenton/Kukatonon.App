@@ -2,10 +2,12 @@ import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../constants/ThemeContext';
+import { useAuth } from '../../constants/AuthContext';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { isAdmin } = useAuth();
 
   return (
     <Tabs
@@ -58,6 +60,16 @@ export default function TabLayout() {
           title: 'About',
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="info-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="admin"
+        options={{
+          title: 'Admin',
+          href: isAdmin ? '/admin' : null,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="admin-panel-settings" size={size} color={color} />
           ),
         }}
       />
