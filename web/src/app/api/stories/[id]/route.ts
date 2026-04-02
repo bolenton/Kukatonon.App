@@ -3,8 +3,8 @@ import { createServiceClient } from '@/lib/supabase/server';
 
 const PUBLIC_FIELDS = `
   id, title, slug, honoree_name, summary, content_html,
-  youtube_urls, media_items, cover_image_url,
-  status, is_featured, source_type, submitted_by_name,
+  youtube_urls, media_items, cover_image_url, content_blocks,
+  category_ids, status, is_featured, source_type, submitted_by_name,
   created_at, updated_at
 `;
 

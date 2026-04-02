@@ -9,5 +9,5 @@ export function extractVideoId(url: string): string | null {
 export function getEmbedUrl(url: string): string | null {
   const videoId = extractVideoId(url);
   if (!videoId) return null;
-  return `https://www.youtube-nocookie.com/embed/${videoId}`;
+  return `https://www.youtube.com/embed/${videoId}`;
 }
