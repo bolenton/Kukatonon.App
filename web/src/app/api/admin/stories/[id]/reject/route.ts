@@ -6,7 +6,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { error, status, user, supabase } = await requireAdmin();
+  const { error, status, user, supabase } = await requireAdmin(request);
   if (error || !user) return NextResponse.json({ error }, { status });
 
   const body = await request.json().catch(() => ({}));

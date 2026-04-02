@@ -1,22 +1,18 @@
 import { createClient, createServiceClient } from './server';
 
-export async function requireAdmin() {
-  // Check for Bearer token (mobile app) or cookie-based session (web)
+export async function requireAdmin(request?: Request) {
+  // Check for Bearer token from mobile app
   let bearerToken: string | null = null;
-  try {
-    const { headers } = await import('next/headers');
-    const headersList = await headers();
-    const authHeader = headersList.get('authorization');
+  if (request) {
+    const authHeader = request.headers.get('authorization');
     bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  } catch {
-    // headers() not available — fall through to cookie-based auth
   }
 
   let supabase;
   let user;
 
   if (bearerToken) {
-    // Mobile: verify JWT token with Supabase, use service client for DB queries
+    // Mobile: verify JWT token with Supabase
     const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
     const authClient = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

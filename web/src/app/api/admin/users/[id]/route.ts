@@ -14,7 +14,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { error, status, user } = await requireAdmin();
+  const { error, status, user } = await requireAdmin(request);
   if (error || !user) return NextResponse.json({ error }, { status });
 
   const roleCheck = requireSuperAdmin(user);
@@ -64,11 +64,11 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { error, status, user } = await requireAdmin();
+  const { error, status, user } = await requireAdmin(request);
   if (error || !user) return NextResponse.json({ error }, { status });
 
   const roleCheck = requireSuperAdmin(user);

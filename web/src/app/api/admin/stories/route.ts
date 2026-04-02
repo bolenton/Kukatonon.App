@@ -6,7 +6,7 @@ import { createSlug } from '@/lib/slugify';
 import { createServiceClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
-  const { error, status, supabase } = await requireAdmin();
+  const { error, status, supabase } = await requireAdmin(request);
   if (error) return NextResponse.json({ error }, { status });
 
   const { searchParams } = new URL(request.url);
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { error, status, user, supabase } = await requireAdmin();
+  const { error, status, user, supabase } = await requireAdmin(request);
   if (error || !user) return NextResponse.json({ error }, { status });
 
   const body = await request.json();

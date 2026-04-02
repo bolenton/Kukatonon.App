@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/supabase/admin';
 import { createServiceClient } from '@/lib/supabase/server';
 
-export async function GET() {
-  const { error, status, user } = await requireAdmin();
+export async function GET(request: NextRequest) {
+  const { error, status, user } = await requireAdmin(request);
   if (error || !user) return NextResponse.json({ error }, { status });
 
   return NextResponse.json({
@@ -16,7 +16,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
-  const { error, status, user } = await requireAdmin();
+  const { error, status, user } = await requireAdmin(request);
   if (error || !user) return NextResponse.json({ error }, { status });
 
   const body = await request.json();

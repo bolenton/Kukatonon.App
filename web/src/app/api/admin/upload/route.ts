@@ -3,7 +3,7 @@ import { requireAdmin } from '@/lib/supabase/admin';
 import { generateStoragePath } from '@/lib/media';
 
 export async function POST(request: NextRequest) {
-  const { error, status, supabase } = await requireAdmin();
+  const { error, status, supabase } = await requireAdmin(request);
   if (error) return NextResponse.json({ error }, { status });
 
   const body = await request.json();

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/supabase/admin';
 import { createSlug } from '@/lib/slugify';
 
-export async function GET() {
-  const { error, status, supabase } = await requireAdmin();
+export async function GET(request: NextRequest) {
+  const { error, status, supabase } = await requireAdmin(request);
   if (error) return NextResponse.json({ error }, { status });
 
   const { data, error: queryError } = await supabase
@@ -19,7 +19,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { error, status, user, supabase } = await requireAdmin();
+  const { error, status, user, supabase } = await requireAdmin(request);
   if (error || !user) return NextResponse.json({ error }, { status });
 
   const body = await request.json();

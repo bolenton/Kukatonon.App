@@ -9,8 +9,8 @@ function requireSuperAdmin(user: { admin: { role: string } } | null) {
   return null;
 }
 
-export async function GET() {
-  const { error, status, user } = await requireAdmin();
+export async function GET(request: NextRequest) {
+  const { error, status, user } = await requireAdmin(request);
   if (error) return NextResponse.json({ error }, { status });
 
   const roleCheck = requireSuperAdmin(user);
@@ -38,7 +38,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { error, status, user } = await requireAdmin();
+  const { error, status, user } = await requireAdmin(request);
   if (error || !user) return NextResponse.json({ error }, { status });
 
   const roleCheck = requireSuperAdmin(user);
