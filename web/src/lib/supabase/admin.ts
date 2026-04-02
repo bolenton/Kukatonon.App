@@ -4,10 +4,14 @@ export async function requireAdmin(request?: Request) {
   // If a Bearer token is provided (mobile), use token-based auth
   if (request) {
     const authHeader = request.headers.get('authorization');
+    console.log('[requireAdmin] authHeader present:', !!authHeader, 'value:', authHeader?.substring(0, 30));
     const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
     if (bearerToken) {
+      console.log('[requireAdmin] using Bearer token path');
       return requireAdminWithToken(bearerToken);
     }
+  } else {
+    console.log('[requireAdmin] no request object passed');
   }
 
   // Default: cookie-based auth (web)
