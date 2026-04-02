@@ -17,7 +17,7 @@ const ThemeContext = createContext<ThemeContextValue>({
 const STORAGE_KEY = 'kukatonon_theme';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<ThemeMode>('earth');
+  const [mode, setMode] = useState<ThemeMode>('light');
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((val) => {

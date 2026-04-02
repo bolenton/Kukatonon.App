@@ -1,12 +1,16 @@
-import { createClient } from './server';
-import { createServiceClient } from './server';
-import { headers } from 'next/headers';
+import { createClient, createServiceClient } from './server';
 
 export async function requireAdmin() {
   // Check for Bearer token (mobile app) or cookie-based session (web)
-  const headersList = await headers();
-  const authHeader = headersList.get('authorization');
-  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  let bearerToken: string | null = null;
+  try {
+    const { headers } = await import('next/headers');
+    const headersList = await headers();
+    const authHeader = headersList.get('authorization');
+    bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  } catch {
+    // headers() not available — fall through to cookie-based auth
+  }
 
   let supabase;
   let user;
@@ -23,7 +27,6 @@ export async function requireAdmin() {
       return { error: 'Unauthorized', status: 401, user: null, supabase: authClient };
     }
     user = data.user;
-    // Use service client to bypass RLS for admin table lookup and subsequent queries
     supabase = await createServiceClient();
   } else {
     // Web: use cookie-based session
