@@ -41,6 +41,7 @@ async function requireAdminWithToken(token: string) {
   );
 
   const { data, error: authError } = await authClient.auth.getUser(token);
+  console.log('[requireAdmin] token verify:', authError ? `ERROR: ${authError.message}` : `OK user=${data.user?.id}`);
   if (authError || !data.user) {
     return { error: 'Unauthorized', status: 401, user: null, supabase: authClient };
   }
