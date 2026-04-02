@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from '../constants/ThemeContext';
+import { AuthProvider } from '../constants/AuthContext';
 
 function RootStack() {
   const { mode, colors } = useTheme();
@@ -48,8 +49,10 @@ function RootStack() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <RootStack />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <RootStack />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

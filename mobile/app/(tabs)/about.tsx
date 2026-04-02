@@ -1,18 +1,43 @@
+import { useState, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, Linking, Pressable } from 'react-native';
 import { useTheme } from '../../constants/ThemeContext';
+import { useAuth } from '../../constants/AuthContext';
 import { fonts } from '../../constants/theme';
+import AdminLoginModal from '../../components/AdminLoginModal';
 
 export default function AboutScreen() {
   const { mode, colors, toggle } = useTheme();
+  const { isAdmin, logout } = useAuth();
+  const [showLogin, setShowLogin] = useState(false);
+  const tapCount = useRef(0);
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleTitleTap() {
+    if (isAdmin) return; // Already logged in
+    tapCount.current += 1;
+
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => {
+      tapCount.current = 0;
+    }, 2000); // Reset after 2s of no taps
+
+    if (tapCount.current >= 10) {
+      tapCount.current = 0;
+      if (tapTimer.current) clearTimeout(tapTimer.current);
+      setShowLogin(true);
+    }
+  }
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.bg }]} contentContainerStyle={styles.content}>
       {/* Hero */}
       <View style={[styles.hero, { backgroundColor: mode === 'earth' ? colors.earth.darkest : colors.bg }]}>
         <Text style={[styles.heroLabel, { color: colors.earth.gold }]}>ABOUT THE PROJECT</Text>
-        <Text style={[styles.heroTitle, { color: mode === 'earth' ? colors.earth.cream : colors.text }]}>
-          Kukatonon
-        </Text>
+        <Pressable onPress={handleTitleTap}>
+          <Text style={[styles.heroTitle, { color: mode === 'earth' ? colors.earth.cream : colors.text }]}>
+            Kukatonon
+          </Text>
+        </Pressable>
         <Text style={[styles.heroSubtitle, { color: mode === 'earth' ? colors.earth.cream : colors.textSecondary, opacity: 0.8 }]}>
           A National Act of Memory, Healing, and Collective Responsibility
         </Text>
@@ -103,7 +128,25 @@ export default function AboutScreen() {
         </View>
       </View>
 
+      {/* Admin logout (only visible when logged in) */}
+      {isAdmin && (
+        <View style={[styles.themeSection, { borderTopColor: colors.border }]}>
+          <View style={styles.themeInfo}>
+            <Text style={[styles.themeLabel, { color: colors.textSecondary }]}>Admin</Text>
+            <Text style={[styles.themeName, { color: colors.textMuted }]}>Logged in</Text>
+          </View>
+          <Pressable
+            onPress={logout}
+            style={{ backgroundColor: '#fef2f2', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
+          >
+            <Text style={{ color: '#dc2626', fontSize: 13, fontWeight: '600' }}>Logout</Text>
+          </Pressable>
+        </View>
+      )}
+
       <View style={{ height: 40 }} />
+
+      <AdminLoginModal visible={showLogin} onClose={() => setShowLogin(false)} />
     </ScrollView>
   );
 }
