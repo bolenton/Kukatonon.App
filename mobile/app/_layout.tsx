@@ -43,6 +43,13 @@ function RootStack() {
           }}
         />
         <Stack.Screen
+          name="submit"
+          options={{
+            title: 'Share a Story',
+            headerBackTitle: 'Back',
+          }}
+        />
+        <Stack.Screen
           name="legal/[page]"
           options={{
             headerBackTitle: 'Back',
