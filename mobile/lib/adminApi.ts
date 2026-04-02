@@ -19,6 +19,7 @@ export async function adminFetch(token: string, path: string, options?: RequestI
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
+    console.error(`[adminApi] ${res.status} ${path}:`, body.error || body);
     throw new AdminApiError(res.status, body.error || 'Request failed');
   }
   return res.json();

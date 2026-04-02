@@ -1,4 +1,5 @@
 import { createClient } from './server';
+import { createServiceClient } from './server';
 import { headers } from 'next/headers';
 
 export async function requireAdmin() {
@@ -11,17 +12,19 @@ export async function requireAdmin() {
   let user;
 
   if (bearerToken) {
-    // Mobile: verify JWT token directly with Supabase
+    // Mobile: verify JWT token with Supabase, use service client for DB queries
     const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-    supabase = createSupabaseClient(
+    const authClient = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
-    const { data, error: authError } = await supabase.auth.getUser(bearerToken);
+    const { data, error: authError } = await authClient.auth.getUser(bearerToken);
     if (authError || !data.user) {
-      return { error: 'Unauthorized', status: 401, user: null, supabase };
+      return { error: 'Unauthorized', status: 401, user: null, supabase: authClient };
     }
     user = data.user;
+    // Use service client to bypass RLS for admin table lookup and subsequent queries
+    supabase = await createServiceClient();
   } else {
     // Web: use cookie-based session
     supabase = await createClient();
