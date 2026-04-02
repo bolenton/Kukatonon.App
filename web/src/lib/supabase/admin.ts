@@ -3,18 +3,7 @@ import { createClient } from './server';
 export async function requireAdmin(request?: Request) {
   // If a Bearer token is provided (mobile), use token-based auth
   if (request) {
-    let authHeader = request.headers.get('authorization');
-
-    // Vercel Smart Cache moves Authorization into x-vercel-sc-headers
-    if (!authHeader) {
-      const scHeaders = request.headers.get('x-vercel-sc-headers');
-      if (scHeaders) {
-        try {
-          const parsed = JSON.parse(scHeaders);
-          authHeader = parsed['Authorization'] || parsed['authorization'] || null;
-        } catch {}
-      }
-    }
+    const authHeader = request.headers.get('authorization');
 
     const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
     if (bearerToken) {
@@ -53,8 +42,8 @@ async function requireAdminWithToken(token: string) {
   );
 
   const { data, error: authError } = await authClient.auth.getUser(token);
-  console.log('[requireAdmin] token verify:', authError ? `ERROR: ${authError.message}` : `OK user=${data.user?.id}`);
   if (authError || !data.user) {
+    console.log('[requireAdmin] token verify failed:', authError?.message);
     return { error: 'Unauthorized', status: 401, user: null, supabase: authClient };
   }
 
