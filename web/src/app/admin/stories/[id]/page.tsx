@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import StoryComposer from "@/components/editor/composer/StoryComposer";
-import type { Story } from "@/types/database";
+import type { Story, Category } from "@/types/database";
 import type { ContentBlock } from "@/types/blocks";
 
 export default function AdminStoryDetailPage() {
@@ -21,6 +21,12 @@ export default function AdminStoryDetailPage() {
   const [isFeatured, setIsFeatured] = useState(false);
   const [reviewNotes, setReviewNotes] = useState("");
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/categories").then(r => r.ok ? r.json() : { categories: [] }).then(d => setAllCategories(d.categories || []));
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -38,6 +44,7 @@ export default function AdminStoryDetailPage() {
       setIsFeatured(data.is_featured);
       setReviewNotes(data.review_notes || "");
       setContentBlocks(data.content_blocks || []);
+      setCategoryIds(data.category_ids || []);
       setLoading(false);
     }
     load();
@@ -57,6 +64,7 @@ export default function AdminStoryDetailPage() {
         is_featured: isFeatured,
         review_notes: reviewNotes || null,
         content_blocks: contentBlocks.length > 0 ? contentBlocks : null,
+        category_ids: categoryIds,
         // Preserve original source material
         content_html: story?.content_html || null,
         youtube_urls: story?.youtube_urls || [],
@@ -190,6 +198,40 @@ export default function AdminStoryDetailPage() {
               <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${isFeatured ? "translate-x-4.5" : "translate-x-0.5"}`} />
             </button>
           </div>
+
+          {/* Categories */}
+          {allCategories.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Categories <span className="text-gray-400 font-normal">(up to 5)</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {allCategories.map((cat) => {
+                  const selected = categoryIds.includes(cat.id);
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        if (selected) {
+                          setCategoryIds(categoryIds.filter((c) => c !== cat.id));
+                        } else if (categoryIds.length < 5) {
+                          setCategoryIds([...categoryIds, cat.id]);
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        selected
+                          ? "bg-earth-gold/15 text-earth-gold border border-earth-gold/30"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-transparent"
+                      } ${!selected && categoryIds.length >= 5 ? "opacity-40 cursor-not-allowed" : ""}`}
+                    >
+                      {cat.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Cover image preview */}

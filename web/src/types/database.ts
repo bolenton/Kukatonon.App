@@ -35,6 +35,7 @@ export interface Story {
   approved_by: string | null;
   approved_at: string | null;
   content_blocks: ContentBlock[] | null;
+  category_ids: string[];
   created_at: string;
   updated_at: string;
 }
@@ -50,6 +51,14 @@ export interface Admin {
   user_id: string;
   full_name: string | null;
   role: AdminRole;
+  created_at: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
   created_at: string;
 }
 
@@ -88,6 +97,7 @@ export interface StoryCreatePayload {
   cover_image_url?: string;
   is_featured?: boolean;
   content_blocks?: ContentBlock[] | null;
+  category_ids?: string[];
 }
 
 export interface StoryUpdatePayload extends Partial<StoryCreatePayload> {

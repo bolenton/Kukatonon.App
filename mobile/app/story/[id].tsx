@@ -15,6 +15,7 @@ import { WebView } from 'react-native-webview';
 import { fetchStory, type PublicStory } from '../../lib/api';
 import { getEmbedUrl } from '../../lib/youtube';
 import { colors, fonts } from '../../constants/theme';
+import ShareStory from '../../components/ShareStory';
 
 export default function StoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -103,6 +104,11 @@ export default function StoryDetailScreen() {
             })}
             {story.submitted_by_name ? ` \u00b7 by ${story.submitted_by_name}` : ''}
           </Text>
+          <ShareStory
+            storyId={story.id}
+            storySlug={story.slug}
+            honoreeName={story.honoree_name}
+          />
         </View>
 
         {/* Summary */}
@@ -283,6 +289,9 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   meta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 20,
     paddingBottom: 8,
   },

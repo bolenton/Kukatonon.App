@@ -47,6 +47,7 @@ export async function PATCH(
   if (body.cover_image_url !== undefined) updates.cover_image_url = body.cover_image_url;
   if (body.is_featured !== undefined) updates.is_featured = body.is_featured;
   if (body.review_notes !== undefined) updates.review_notes = body.review_notes;
+  if (body.category_ids !== undefined) updates.category_ids = body.category_ids;
   if (body.content_blocks !== undefined) {
     if (body.content_blocks === null) {
       updates.content_blocks = null;
