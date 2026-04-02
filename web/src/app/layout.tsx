@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ThemeProvider from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: {
@@ -8,7 +9,11 @@ export const metadata: Metadata = {
   },
   description:
     "A National Act of Memory, Healing, and Collective Responsibility. Honor the victims of the Liberian Civil War through shared stories.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://kukatonon.app"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL?.startsWith("http")
+      ? process.env.NEXT_PUBLIC_APP_URL
+      : `https://${process.env.NEXT_PUBLIC_APP_URL || "kukatonon.app"}`
+  ),
   openGraph: {
     type: "website",
     siteName: "Kukatonon",
@@ -31,7 +36,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="min-h-full flex flex-col font-sans">
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

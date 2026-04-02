@@ -33,18 +33,18 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-earth-darkest flex items-center justify-center pattern-bg">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="w-full max-w-md px-6">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-14 h-14 bg-earth-gold rounded-xl flex items-center justify-center mx-auto mb-4">
               <span className="text-earth-darkest font-bold text-2xl font-serif">K</span>
             </div>
-            <h1 className="font-serif text-2xl font-bold text-earth-dark">
+            <h1 className="font-serif text-2xl font-bold text-gray-900">
               Admin Login
             </h1>
-            <p className="text-earth-warm/70 text-sm mt-1">Kukatonon Memorial App</p>
+            <p className="text-gray-400 text-sm mt-1">Kukatonon Memorial App</p>
           </div>
 
           {error && (
@@ -55,7 +55,7 @@ export default function AdminLoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-earth-dark mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
               <input
@@ -69,7 +69,7 @@ export default function AdminLoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-earth-dark mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Password
               </label>
               <input
@@ -84,7 +84,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-earth-gold hover:bg-earth-amber disabled:opacity-60 text-earth-darkest py-3 rounded-lg font-semibold transition-colors"
+              className="w-full bg-earth-amber hover:bg-earth-orange disabled:opacity-60 text-earth-darkest py-3 rounded-lg font-semibold transition-colors"
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>

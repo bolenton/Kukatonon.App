@@ -47,6 +47,18 @@ export async function PATCH(
   if (body.cover_image_url !== undefined) updates.cover_image_url = body.cover_image_url;
   if (body.is_featured !== undefined) updates.is_featured = body.is_featured;
   if (body.review_notes !== undefined) updates.review_notes = body.review_notes;
+  if (body.content_blocks !== undefined) {
+    if (body.content_blocks === null) {
+      updates.content_blocks = null;
+    } else {
+      updates.content_blocks = (body.content_blocks as Array<Record<string, unknown>>).map((block) => {
+        if (block.type === 'text' && typeof block.html === 'string') {
+          return { ...block, html: sanitizeHtml(block.html) };
+        }
+        return block;
+      });
+    }
+  }
 
   const { data, error: updateError } = await supabase
     .from('stories')

@@ -2,16 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
-import ImageUploader from "@/components/editor/ImageUploader";
-import VideoUploader from "@/components/editor/VideoUploader";
-import { isValidYouTubeUrl } from "@/lib/youtube";
-import type { Story, MediaItem } from "@/types/database";
-
-const TiptapEditor = dynamic(() => import("@/components/editor/TiptapEditor"), {
-  ssr: false,
-  loading: () => <div className="border rounded-xl p-6 min-h-[200px] bg-white" />,
-});
+import StoryComposer from "@/components/editor/composer/StoryComposer";
+import type { Story } from "@/types/database";
+import type { ContentBlock } from "@/types/blocks";
 
 export default function AdminStoryDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,13 +17,10 @@ export default function AdminStoryDetailPage() {
   const [title, setTitle] = useState("");
   const [honoreeName, setHonoreeName] = useState("");
   const [summary, setSummary] = useState("");
-  const [contentHtml, setContentHtml] = useState("");
-  const [youtubeUrls, setYoutubeUrls] = useState<string[]>([]);
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [reviewNotes, setReviewNotes] = useState("");
-  const [youtubeInput, setYoutubeInput] = useState("");
+  const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -44,12 +34,10 @@ export default function AdminStoryDetailPage() {
       setTitle(data.title);
       setHonoreeName(data.honoree_name);
       setSummary(data.summary || "");
-      setContentHtml(data.content_html || "");
-      setYoutubeUrls(data.youtube_urls || []);
-      setMediaItems(data.media_items || []);
       setCoverImageUrl(data.cover_image_url || "");
       setIsFeatured(data.is_featured);
       setReviewNotes(data.review_notes || "");
+      setContentBlocks(data.content_blocks || []);
       setLoading(false);
     }
     load();
@@ -65,12 +53,14 @@ export default function AdminStoryDetailPage() {
         title,
         honoree_name: honoreeName,
         summary: summary || null,
-        content_html: contentHtml || null,
-        youtube_urls: youtubeUrls,
-        media_items: mediaItems,
         cover_image_url: coverImageUrl || null,
         is_featured: isFeatured,
         review_notes: reviewNotes || null,
+        content_blocks: contentBlocks.length > 0 ? contentBlocks : null,
+        // Preserve original source material
+        content_html: story?.content_html || null,
+        youtube_urls: story?.youtube_urls || [],
+        media_items: story?.media_items || [],
       }),
     });
     if (res.ok) {
@@ -115,9 +105,6 @@ export default function AdminStoryDetailPage() {
 
   if (!story) return null;
 
-  const images = mediaItems.filter((m) => m.type === "image");
-  const videos = mediaItems.filter((m) => m.type === "video");
-
   return (
     <div className="max-w-4xl">
       <div className="flex items-center justify-between mb-8">
@@ -131,19 +118,15 @@ export default function AdminStoryDetailPage() {
             </svg>
             Back
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 font-serif">
-            Edit Story
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900 font-serif">Edit Story</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-            story.status === "approved" ? "bg-green-100 text-green-800" :
-            story.status === "rejected" ? "bg-red-100 text-red-800" :
-            "bg-amber-100 text-amber-800"
-          }`}>
-            {story.status}
-          </span>
-        </div>
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+          story.status === "approved" ? "bg-green-100 text-green-800" :
+          story.status === "rejected" ? "bg-red-100 text-red-800" :
+          "bg-amber-100 text-amber-800"
+        }`}>
+          {story.status}
+        </span>
       </div>
 
       {message && (
@@ -209,71 +192,29 @@ export default function AdminStoryDetailPage() {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="bg-white rounded-xl border p-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
-          <TiptapEditor content={contentHtml} onChange={setContentHtml} />
-        </div>
-
-        {/* Media */}
-        <div className="bg-white rounded-xl border p-6 space-y-6">
-          <ImageUploader
-            onUpload={(item) => {
-              setMediaItems((prev) => [...prev, item]);
-              if (!coverImageUrl) setCoverImageUrl(item.url);
-            }}
-            existingItems={images}
-            onRemove={(index) => {
-              const img = images[index];
-              setMediaItems((prev) => prev.filter((m) => m !== img));
-              if (img.url === coverImageUrl) setCoverImageUrl("");
-            }}
-          />
-
-          <VideoUploader
-            onUpload={(item) => setMediaItems((prev) => [...prev, item])}
-            existingItems={videos}
-            onRemove={(index) => {
-              const vid = videos[index];
-              setMediaItems((prev) => prev.filter((m) => m !== vid));
-            }}
-          />
-
-          {/* YouTube */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">YouTube Videos</label>
-            {youtubeUrls.map((url, i) => (
-              <div key={i} className="flex items-center gap-2 mb-2">
-                <span className="text-sm text-gray-600 truncate flex-1">{url}</span>
-                <button
-                  onClick={() => setYoutubeUrls((prev) => prev.filter((_, idx) => idx !== i))}
-                  className="text-red-500 text-sm"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={youtubeInput}
-                onChange={(e) => setYoutubeInput(e.target.value)}
-                placeholder="YouTube URL"
-                className="flex-1 px-4 py-2 rounded-lg border focus:border-earth-gold outline-none text-sm"
-              />
-              <button
-                onClick={() => {
-                  if (youtubeInput && isValidYouTubeUrl(youtubeInput)) {
-                    setYoutubeUrls((prev) => [...prev, youtubeInput]);
-                    setYoutubeInput("");
-                  }
-                }}
-                className="px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200"
-              >
-                Add
-              </button>
+        {/* Cover image preview */}
+        {coverImageUrl && (
+          <div className="bg-white rounded-xl border p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Cover Image</span>
+              <button onClick={() => setCoverImageUrl("")} className="text-xs text-red-600 hover:text-red-800">Remove</button>
             </div>
+            <img src={coverImageUrl} alt="Cover" className="h-32 rounded-lg object-cover" />
           </div>
+        )}
+
+        {/* Story Composer */}
+        <div>
+          <h2 className="text-sm font-medium text-gray-700 mb-3">Story Content</h2>
+          <StoryComposer
+            blocks={contentBlocks}
+            onChange={setContentBlocks}
+            sourceContentHtml={story.content_html}
+            sourceMediaItems={story.media_items || []}
+            sourceYoutubeUrls={story.youtube_urls || []}
+            coverImageUrl={coverImageUrl}
+            onCoverImageChange={setCoverImageUrl}
+          />
         </div>
 
         {/* Review Notes */}
@@ -293,7 +234,7 @@ export default function AdminStoryDetailPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-2.5 bg-earth-gold text-earth-darkest rounded-lg font-medium hover:bg-earth-amber disabled:opacity-60 transition-colors"
+            className="px-6 py-2.5 bg-earth-amber text-earth-darkest rounded-lg font-medium hover:bg-earth-orange disabled:opacity-60 transition-colors"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>

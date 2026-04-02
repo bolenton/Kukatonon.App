@@ -1,7 +1,52 @@
 @import "tailwindcss";
 
+/* ===== THEME SYSTEM =====
+   Three themes: nature (default), classic, earth
+   Structural vars use --site-* prefix
+   Accent colors override --color-earth-* tokens
+*/
+
 :root {
-  /* Earth tones palette inspired by event flyer */
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+
+  /* Structural colors (header, footer, hero, cta) */
+  --site-header-bg: #ffffff;
+  --site-header-text: #111827;
+  --site-header-link: #4b5563;
+  --site-header-link-hover: #ABC270;
+  --site-header-border: #e5e7eb;
+  --site-footer-bg: #f9fafb;
+  --site-footer-text: #6b7280;
+  --site-footer-heading: #111827;
+  --site-footer-border: #e5e7eb;
+  --site-hero-bg: #ffffff;
+  --site-hero-text: #111827;
+  --site-hero-subtext: #4b5563;
+  --site-hero-muted: #9ca3af;
+  --site-cta-bg: #ffffff;
+  --site-cta-text: #111827;
+  --site-cta-subtext: #6b7280;
+  --site-cta-border: #f3f4f6;
+
+  /* Accent palette — Nature (sage green / yellow / orange) */
+  --color-earth-darkest: #463C33;
+  --color-earth-dark: #524840;
+  --color-earth-brown: #5e544d;
+  --color-earth-warm: #7a6e61;
+  --color-earth-medium: #8a9a5a;
+  --color-earth-gold: #ABC270;
+  --color-earth-amber: #FEC868;
+  --color-earth-orange: #FDA769;
+  --color-earth-cream: #f2f0e8;
+  --color-earth-light: #f9f8f5;
+  --color-earth-olive: #93ad5c;
+  --color-earth-forest: #7a9e3e;
+}
+
+/* ── Classic: white structure + original gold accents ── */
+[data-theme="classic"] {
+  --site-header-link-hover: #b8860b;
   --color-earth-darkest: #1a0f0a;
   --color-earth-dark: #2c1810;
   --color-earth-brown: #3b2418;
@@ -9,13 +54,46 @@
   --color-earth-medium: #8b6914;
   --color-earth-gold: #b8860b;
   --color-earth-amber: #daa520;
+  --color-earth-orange: #c8961e;
+  --color-earth-cream: #faebd7;
+  --color-earth-light: #fdf8f3;
+  --color-earth-olive: #6b8e23;
+  --color-earth-forest: #2d5016;
+}
+
+/* ── Earth: dark structure + gold accents, cornsilk body bg ── */
+[data-theme="earth"] {
+  --background: #fff8dc;
+  --foreground: #2c1810;
+  --site-header-bg: #1a0f0a;
+  --site-header-text: #faebd7;
+  --site-header-link: rgba(250,235,215,0.8);
+  --site-header-link-hover: #daa520;
+  --site-header-border: rgba(184,134,11,0.2);
+  --site-footer-bg: #1a0f0a;
+  --site-footer-text: rgba(250,235,215,0.7);
+  --site-footer-heading: #daa520;
+  --site-footer-border: rgba(184,134,11,0.1);
+  --site-hero-bg: #1a0f0a;
+  --site-hero-text: #faebd7;
+  --site-hero-subtext: rgba(250,235,215,0.8);
+  --site-hero-muted: rgba(250,235,215,0.6);
+  --site-cta-bg: #1a0f0a;
+  --site-cta-text: #faebd7;
+  --site-cta-subtext: rgba(250,235,215,0.7);
+  --site-cta-border: rgba(184,134,11,0.2);
+  --color-earth-darkest: #1a0f0a;
+  --color-earth-dark: #2c1810;
+  --color-earth-brown: #3b2418;
+  --color-earth-warm: #5c4033;
+  --color-earth-medium: #8b6914;
+  --color-earth-gold: #b8860b;
+  --color-earth-amber: #daa520;
+  --color-earth-orange: #c8961e;
   --color-earth-cream: #faebd7;
   --color-earth-light: #fff8dc;
   --color-earth-olive: #6b8e23;
   --color-earth-forest: #2d5016;
-
-  --background: var(--color-earth-light);
-  --foreground: var(--color-earth-dark);
 }
 
 @theme inline {
@@ -24,18 +102,18 @@
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
 
-  /* Custom colors */
-  --color-earth-darkest: #1a0f0a;
-  --color-earth-dark: #2c1810;
-  --color-earth-brown: #3b2418;
-  --color-earth-warm: #5c4033;
-  --color-earth-medium: #8b6914;
-  --color-earth-gold: #b8860b;
-  --color-earth-amber: #daa520;
-  --color-earth-cream: #faebd7;
-  --color-earth-light: #fff8dc;
-  --color-earth-olive: #6b8e23;
-  --color-earth-forest: #2d5016;
+  --color-earth-darkest: #463C33;
+  --color-earth-dark: #524840;
+  --color-earth-brown: #5e544d;
+  --color-earth-warm: #7a6e61;
+  --color-earth-medium: #8a9a5a;
+  --color-earth-gold: #ABC270;
+  --color-earth-amber: #FEC868;
+  --color-earth-orange: #FDA769;
+  --color-earth-cream: #f2f0e8;
+  --color-earth-light: #f9f8f5;
+  --color-earth-olive: #93ad5c;
+  --color-earth-forest: #7a9e3e;
 }
 
 body {
@@ -44,7 +122,6 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Headings use serif */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif);
 }
@@ -52,66 +129,39 @@ h1, h2, h3, h4, h5, h6 {
 /* Rich text content styles */
 .prose-memorial {
   line-height: 1.8;
+  color: #374151;
 }
-.prose-memorial p {
-  margin-bottom: 1rem;
-}
+.prose-memorial p { margin-bottom: 1rem; }
 .prose-memorial h1, .prose-memorial h2, .prose-memorial h3, .prose-memorial h4 {
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
   font-family: 'Playfair Display', Georgia, serif;
+  color: #1a1a1a;
 }
 .prose-memorial blockquote {
   border-left: 4px solid var(--color-earth-gold);
   padding-left: 1rem;
   margin: 1.5rem 0;
   font-style: italic;
-  color: var(--color-earth-warm);
+  color: #6b7280;
 }
-.prose-memorial ul, .prose-memorial ol {
-  margin: 1rem 0;
-  padding-left: 1.5rem;
-}
-.prose-memorial li {
-  margin-bottom: 0.5rem;
-}
-.prose-memorial a {
-  color: var(--color-earth-gold);
-  text-decoration: underline;
-}
-.prose-memorial img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 0.5rem;
-  margin: 1rem 0;
-}
-.prose-memorial iframe {
-  max-width: 100%;
-  border-radius: 0.5rem;
-  margin: 1rem 0;
-}
-.prose-memorial strong {
-  font-weight: 700;
-}
-.prose-memorial em {
-  font-style: italic;
-}
+.prose-memorial ul, .prose-memorial ol { margin: 1rem 0; padding-left: 1.5rem; }
+.prose-memorial li { margin-bottom: 0.5rem; }
+.prose-memorial a { color: var(--color-earth-forest); text-decoration: underline; }
+.prose-memorial img { max-width: 100%; height: auto; border-radius: 0.5rem; margin: 1rem 0; }
+.prose-memorial iframe { max-width: 100%; border-radius: 0.5rem; margin: 1rem 0; }
+.prose-memorial strong { font-weight: 700; }
+.prose-memorial em { font-style: italic; }
 
-/* African geometric pattern background */
 .pattern-bg {
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23b8860b' fill-opacity='0.06'%3E%3Cpath d='M30 0L60 30L30 60L0 30z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ABC270' fill-opacity='0.06'%3E%3Cpath d='M30 0L60 30L30 60L0 30z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
-/* Tiptap editor styles */
-.tiptap {
-  outline: none;
-  min-height: 200px;
-  padding: 1rem;
-}
+.tiptap { outline: none; min-height: 200px; padding: 1rem; }
 .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #8b7355;
+  color: #9ca3af;
   pointer-events: none;
   height: 0;
 }

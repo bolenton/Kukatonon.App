@@ -93,11 +93,12 @@ export async function POST(request: NextRequest) {
       media_items: body.media_items || [],
       cover_image_url: body.cover_image_url || null,
       is_featured: body.is_featured || false,
-      status: 'approved',
+      status: body.status === 'pending' ? 'pending' : 'approved',
       source_type: 'admin',
       submitted_by_name: user.admin.full_name || null,
-      approved_by: user.id,
-      approved_at: new Date().toISOString(),
+      approved_by: body.status === 'pending' ? null : user.id,
+      approved_at: body.status === 'pending' ? null : new Date().toISOString(),
+      content_blocks: body.content_blocks || null,
     })
     .select()
     .single();
