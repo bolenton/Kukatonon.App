@@ -2,19 +2,17 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
+  // Skip session management for API routes — let them handle auth directly
+  // Just pass through with the original headers intact
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   return await updateSession(request);
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico (favicon)
-     * - public files (icons, manifest, etc.)
-     * - api routes (handle their own auth)
-     */
-    '/((?!_next/static|_next/image|favicon\\.ico|icons|manifest\\.json|api/).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|icons|manifest\\.json|\\.well-known).*)',
   ],
 };
