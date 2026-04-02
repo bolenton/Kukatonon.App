@@ -67,7 +67,8 @@ export default function TabLayout() {
         name="admin"
         options={{
           title: 'Admin',
-          href: isAdmin ? '/admin' : null,
+          headerShown: false,
+          href: isAdmin ? '/(tabs)/admin' : null,
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="admin-panel-settings" size={size} color={color} />
           ),
