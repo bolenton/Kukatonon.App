@@ -12,8 +12,9 @@ import { useLocalSearchParams, Stack } from 'expo-router';
 import { Image } from 'expo-image';
 import RenderHtml from 'react-native-render-html';
 import { WebView } from 'react-native-webview';
-import { fetchStory, type PublicStory } from '../../lib/api';
-import { getEmbedUrl } from '../../lib/youtube';
+import YoutubePlayer from 'react-native-youtube-iframe';
+import { fetchStory, type PublicStory, type ContentBlock } from '../../lib/api';
+import { extractVideoId } from '../../lib/youtube';
 import { colors as sc, fonts } from '../../constants/theme';
 import { useTheme } from '../../constants/ThemeContext';
 import ShareStory from '../../components/ShareStory';
@@ -31,6 +32,13 @@ export default function StoryDetailScreen() {
     async function load() {
       try {
         const data = await fetchStory(id);
+        console.log('[StoryDetail] fetched story:', data.id);
+        console.log('[StoryDetail] content_blocks:', data.content_blocks ? `${data.content_blocks.length} blocks` : 'null');
+        if (data.content_blocks) {
+          data.content_blocks.forEach((b, i) => console.log(`[StoryDetail]   block ${i}: type=${b.type}`));
+        }
+        console.log('[StoryDetail] media_items:', data.media_items?.length ?? 0);
+        console.log('[StoryDetail] youtube_urls:', data.youtube_urls?.length ?? 0);
         setStory(data);
       } catch {
         setError('Story not found');
@@ -120,81 +128,117 @@ export default function StoryDetailScreen() {
           </View>
         )}
 
-        {/* HTML Content */}
-        {story.content_html && (
-          <View style={styles.htmlContainer}>
-            <RenderHtml
-              contentWidth={width - 40}
-              source={{ html: story.content_html }}
-              baseStyle={{
-                fontSize: 15,
-                lineHeight: 26,
-                color: colors.earth.dark,
-              }}
-              tagsStyles={{
-                p: { marginBottom: 12 },
-                h2: { fontFamily: fonts.serif, fontSize: 22, fontWeight: '700', marginTop: 16, marginBottom: 8 },
-                h3: { fontFamily: fonts.serif, fontSize: 18, fontWeight: '700', marginTop: 12, marginBottom: 6 },
-                blockquote: {
-                  borderLeftWidth: 4,
-                  borderLeftColor: colors.earth.gold,
-                  paddingLeft: 14,
-                  fontStyle: 'italic',
-                  color: colors.earth.warm,
-                },
-                strong: { fontWeight: '700' },
-                a: { color: colors.earth.gold },
-              }}
-            />
-          </View>
-        )}
-
-        {/* YouTube Embeds */}
-        {story.youtube_urls?.map((url, index) => {
-          const embedUrl = getEmbedUrl(url);
-          if (!embedUrl) return null;
-          return (
-            <View key={index} style={styles.videoContainer}>
-              <WebView
-                source={{ uri: embedUrl }}
-                style={styles.webview}
-                allowsFullscreenVideo
-                javaScriptEnabled
-              />
-            </View>
-          );
-        })}
-
-        {/* Image Gallery */}
-        {images.length > 0 && (
-          <View style={styles.galleryContainer}>
-            {images.map((item, index) => (
-              <Pressable
-                key={index}
-                onPress={() => setSelectedImage(item.url)}
-                style={styles.galleryImage}
-              >
-                <Image
-                  source={{ uri: item.url }}
-                  style={{ width: '100%', height: '100%' }}
-                  contentFit="cover"
-                  transition={200}
+        {/* Content — block-based or legacy */}
+        {(() => { console.log('[StoryDetail] RENDER: content_blocks=', story.content_blocks?.length ?? 'null', 'using blocks:', !!(story.content_blocks && story.content_blocks.length > 0)); return null; })()}
+        {story.content_blocks && story.content_blocks.length > 0 ? (
+          story.content_blocks.map((block) => {
+            switch (block.type) {
+              case 'text':
+                return (
+                  <View key={block.id} style={styles.htmlContainer}>
+                    <RenderHtml
+                      contentWidth={width - 40}
+                      source={{ html: block.html }}
+                      baseStyle={{ fontSize: 15, lineHeight: 26, color: colors.earth.dark }}
+                      tagsStyles={htmlTagStyles}
+                    />
+                  </View>
+                );
+              case 'image':
+                return (
+                  <View key={block.id} style={styles.blockImageContainer}>
+                    <Pressable onPress={() => setSelectedImage(block.url)}>
+                      <Image
+                        source={{ uri: block.url }}
+                        style={styles.blockImage}
+                        contentFit="cover"
+                        transition={200}
+                      />
+                    </Pressable>
+                    {block.caption ? <Text style={styles.blockCaption}>{block.caption}</Text> : null}
+                  </View>
+                );
+              case 'video':
+                return (
+                  <View key={block.id} style={styles.blockMediaContainer}>
+                    <View style={styles.videoContainer}>
+                      <WebView source={{ uri: block.url }} style={styles.webview} allowsFullscreenVideo />
+                    </View>
+                    {block.caption ? <Text style={styles.blockCaption}>{block.caption}</Text> : null}
+                  </View>
+                );
+              case 'youtube': {
+                const vid = extractVideoId(block.url);
+                if (!vid) return null;
+                return (
+                  <View key={block.id} style={styles.blockMediaContainer}>
+                    <View style={styles.videoContainer}>
+                      <YoutubePlayer
+                        height={Math.round((width - 40) * 9 / 16)}
+                        videoId={vid}
+                        webViewProps={{ androidLayerType: 'hardware' }}
+                      />
+                    </View>
+                    {block.caption ? <Text style={styles.blockCaption}>{block.caption}</Text> : null}
+                  </View>
+                );
+              }
+            }
+          })
+        ) : (
+          <>
+            {/* Legacy fixed-order rendering */}
+            {story.content_html && (
+              <View style={styles.htmlContainer}>
+                <RenderHtml
+                  contentWidth={width - 40}
+                  source={{ html: story.content_html }}
+                  baseStyle={{ fontSize: 15, lineHeight: 26, color: colors.earth.dark }}
+                  tagsStyles={htmlTagStyles}
                 />
-              </Pressable>
-            ))}
-          </View>
-        )}
+              </View>
+            )}
 
-        {/* Video Players */}
-        {videos.map((item, index) => (
-          <View key={index} style={styles.videoContainer}>
-            <WebView
-              source={{ uri: item.url }}
-              style={styles.webview}
-              allowsFullscreenVideo
-            />
-          </View>
-        ))}
+            {story.youtube_urls?.map((url, index) => {
+              const videoId = extractVideoId(url);
+              if (!videoId) return null;
+              return (
+                <View key={index} style={styles.videoContainer}>
+                  <YoutubePlayer
+                    height={Math.round((width - 40) * 9 / 16)}
+                    videoId={videoId}
+                    webViewProps={{ androidLayerType: 'hardware' }}
+                  />
+                </View>
+              );
+            })}
+
+            {images.length > 0 && (
+              <View style={styles.galleryContainer}>
+                {images.map((item, index) => (
+                  <Pressable
+                    key={index}
+                    onPress={() => setSelectedImage(item.url)}
+                    style={styles.galleryImage}
+                  >
+                    <Image
+                      source={{ uri: item.url }}
+                      style={{ width: '100%', height: '100%' }}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            {videos.map((item, index) => (
+              <View key={index} style={styles.videoContainer}>
+                <WebView source={{ uri: item.url }} style={styles.webview} allowsFullscreenVideo />
+              </View>
+            ))}
+          </>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -243,4 +287,17 @@ const styles = StyleSheet.create({
   lightbox: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
   lightboxImage: { width: '100%', height: '80%' },
   lightboxClose: { color: sc.white, marginTop: 20, opacity: 0.6, fontSize: 14 },
+  blockImageContainer: { marginHorizontal: 20, marginBottom: 16 },
+  blockImage: { width: '100%', aspectRatio: 16 / 10, borderRadius: 12 },
+  blockCaption: { fontSize: 13, color: sc.earth.warm, opacity: 0.7, textAlign: 'center', marginTop: 6, fontStyle: 'italic' },
+  blockMediaContainer: { marginBottom: 16 },
 });
+
+const htmlTagStyles = {
+  p: { marginBottom: 12 },
+  h2: { fontFamily: fonts.serif, fontSize: 22, fontWeight: '700' as const, marginTop: 16, marginBottom: 8 },
+  h3: { fontFamily: fonts.serif, fontSize: 18, fontWeight: '700' as const, marginTop: 12, marginBottom: 6 },
+  blockquote: { borderLeftWidth: 4, borderLeftColor: sc.earth.gold, paddingLeft: 14, fontStyle: 'italic' as const, color: sc.earth.warm },
+  strong: { fontWeight: '700' as const },
+  a: { color: sc.earth.gold },
+};

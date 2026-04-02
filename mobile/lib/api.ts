@@ -1,5 +1,11 @@
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://kukatonon.app';
 
+export type ContentBlock =
+  | { id: string; type: 'text'; html: string }
+  | { id: string; type: 'image'; url: string; width?: number; height?: number; caption?: string }
+  | { id: string; type: 'video'; url: string; caption?: string }
+  | { id: string; type: 'youtube'; url: string; caption?: string };
+
 export interface PublicStory {
   id: string;
   title: string;
@@ -11,6 +17,7 @@ export interface PublicStory {
   media_items: { type: 'image' | 'video'; url: string; thumbnail_url?: string }[];
   cover_image_url: string | null;
   is_featured: boolean;
+  content_blocks: ContentBlock[] | null;
   category_ids: string[];
   submitted_by_name: string | null;
   created_at: string;
