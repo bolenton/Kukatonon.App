@@ -17,6 +17,7 @@ const QRCode = QRCodeSvg as unknown as React.ComponentType<{
   color: string;
   backgroundColor: string;
 }>;
+import { MaterialIcons } from '@expo/vector-icons';
 import { colors, fonts } from '../constants/theme';
 
 const WEB_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://kukatonon.app';
@@ -57,7 +58,7 @@ export default function ShareStory({ storyId, storySlug, honoreeName }: ShareSto
     <>
       {/* Share button */}
       <TouchableOpacity onPress={() => setShowMenu(true)} style={styles.shareButton}>
-        <Text style={styles.shareIcon}>{'\u2197'}</Text>
+        <MaterialIcons name="share" size={20} color={colors.earth.gold} />
       </TouchableOpacity>
 
       {/* Share menu modal */}
@@ -68,7 +69,7 @@ export default function ShareStory({ storyId, storySlug, honoreeName }: ShareSto
             <Text style={styles.menuSubtitle}>In memory of {honoreeName}</Text>
 
             <TouchableOpacity style={styles.menuItem} onPress={handleShareLink}>
-              <Text style={styles.menuItemIcon}>{'\u{1F517}'}</Text>
+              <MaterialIcons name="link" size={24} color={colors.earth.gold} style={styles.menuItemIcon} />
               <View style={styles.menuItemContent}>
                 <Text style={styles.menuItemTitle}>Share Link</Text>
                 <Text style={styles.menuItemDesc}>Send via messages, email, or social media</Text>
@@ -76,7 +77,7 @@ export default function ShareStory({ storyId, storySlug, honoreeName }: ShareSto
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.menuItem} onPress={handleShowQR}>
-              <Text style={styles.menuItemIcon}>{'\u25A3'}</Text>
+              <MaterialIcons name="qr-code-2" size={24} color={colors.earth.gold} style={styles.menuItemIcon} />
               <View style={styles.menuItemContent}>
                 <Text style={styles.menuItemTitle}>Show QR Code</Text>
                 <Text style={styles.menuItemDesc}>Let someone scan to open this story</Text>
@@ -126,10 +127,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  shareIcon: {
-    fontSize: 18,
-    color: colors.earth.gold,
-  },
+  shareIcon: {},
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -164,7 +162,6 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.gray[200],
   },
   menuItemIcon: {
-    fontSize: 24,
     width: 40,
     textAlign: 'center',
   },

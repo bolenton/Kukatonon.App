@@ -12,9 +12,11 @@ import {
 } from 'react-native';
 import StoryCard from '../../components/StoryCard';
 import { fetchStories, fetchCategories, type PublicStory, type CategoryInfo } from '../../lib/api';
-import { colors, fonts } from '../../constants/theme';
+import { colors as staticColors, fonts } from '../../constants/theme';
+import { useTheme } from '../../constants/ThemeContext';
 
 export default function StoriesScreen() {
+  const { colors } = useTheme();
   const [stories, setStories] = useState<PublicStory[]>([]);
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,7 @@ export default function StoriesScreen() {
 
   if (loading && !refreshing) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.bg }]}>
         <ActivityIndicator size="large" color={colors.earth.gold} />
       </View>
     );
@@ -76,7 +78,7 @@ export default function StoriesScreen() {
 
   return (
     <FlatList
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.bg }]}
       contentContainerStyle={styles.listContent}
       data={stories}
       keyExtractor={(item) => item.id}
@@ -180,16 +182,15 @@ export default function StoriesScreen() {
   );
 }
 
+const sc = staticColors;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.earth.light,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.earth.light,
   },
   listContent: {
     padding: 16,
@@ -200,111 +201,28 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   headerLabel: {
-    color: colors.earth.gold,
+    color: sc.earth.gold,
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 2,
     marginBottom: 4,
   },
-  headerTitle: {
-    fontFamily: fonts.serif,
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.earth.dark,
-    marginBottom: 8,
-  },
-  headerDesc: {
-    fontSize: 14,
-    color: colors.earth.warm,
-    opacity: 0.7,
-    textAlign: 'center',
-  },
-  searchRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  searchInput: {
-    flex: 1,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: colors.earth.dark,
-  },
-  searchButton: {
-    backgroundColor: colors.earth.gold,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-  },
-  searchButtonText: {
-    color: colors.earth.darkest,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  categoriesRow: {
-    marginBottom: 12,
-  },
-  categoriesContent: {
-    gap: 8,
-  },
-  categoryPill: {
-    backgroundColor: colors.gray[100],
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-  },
-  categoryPillActive: {
-    backgroundColor: colors.earth.gold + '22',
-    borderWidth: 1,
-    borderColor: colors.earth.gold + '44',
-  },
-  categoryPillText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.gray[600],
-  },
-  categoryPillTextActive: {
-    color: colors.earth.gold,
-  },
-  clearRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.earth.gold + '11',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 12,
-  },
-  clearText: {
-    fontSize: 12,
-    color: colors.earth.warm,
-    flex: 1,
-  },
-  clearButton: {
-    fontSize: 12,
-    color: colors.earth.gold,
-    fontWeight: '600',
-  },
-  emptyState: {
-    padding: 60,
-    alignItems: 'center',
-  },
-  emptyTitle: {
-    fontFamily: fonts.serif,
-    fontSize: 20,
-    color: colors.earth.warm,
-    marginBottom: 8,
-  },
-  emptyDesc: {
-    fontSize: 14,
-    color: colors.earth.warm,
-    opacity: 0.6,
-    textAlign: 'center',
-  },
+  headerTitle: { fontFamily: fonts.serif, fontSize: 28, fontWeight: '700', color: sc.earth.dark, marginBottom: 8 },
+  headerDesc: { fontSize: 14, color: sc.earth.warm, opacity: 0.7, textAlign: 'center' },
+  searchRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  searchInput: { flex: 1, backgroundColor: sc.white, borderWidth: 1, borderColor: sc.gray[200], borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: sc.earth.dark },
+  searchButton: { backgroundColor: sc.earth.gold, borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' },
+  searchButtonText: { color: sc.earth.darkest, fontSize: 14, fontWeight: '600' },
+  categoriesRow: { marginBottom: 12 },
+  categoriesContent: { gap: 8 },
+  categoryPill: { backgroundColor: sc.gray[100], paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
+  categoryPillActive: { backgroundColor: sc.earth.gold + '22', borderWidth: 1, borderColor: sc.earth.gold + '44' },
+  categoryPillText: { fontSize: 13, fontWeight: '500', color: sc.gray[600] },
+  categoryPillTextActive: { color: sc.earth.gold },
+  clearRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: sc.earth.gold + '11', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12 },
+  clearText: { fontSize: 12, color: sc.earth.warm, flex: 1 },
+  clearButton: { fontSize: 12, color: sc.earth.gold, fontWeight: '600' },
+  emptyState: { padding: 60, alignItems: 'center' },
+  emptyTitle: { fontFamily: fonts.serif, fontSize: 20, color: sc.earth.warm, marginBottom: 8 },
+  emptyDesc: { fontSize: 14, color: sc.earth.warm, opacity: 0.6, textAlign: 'center' },
 });
