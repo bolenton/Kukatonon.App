@@ -74,8 +74,8 @@ export default function AdminDashboard() {
         style={[styles.actionBtn, { backgroundColor: colors.earth.gold }]}
         onPress={() => router.push('/(tabs)/admin/pending')}
       >
-        <MaterialIcons name="rate-review" size={20} color={colors.earth.darkest} />
-        <Text style={[styles.actionText, { color: colors.earth.darkest }]}>Review Pending</Text>
+        <MaterialIcons name="rate-review" size={20} color="#fff" />
+        <Text style={[styles.actionText, { color: '#fff' }]}>Review Pending</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -85,6 +85,24 @@ export default function AdminDashboard() {
         <MaterialIcons name="library-books" size={20} color={colors.textSecondary} />
         <Text style={[styles.actionTextSecondary, { color: colors.textSecondary }]}>All Stories</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.actionBtnSecondary, { borderColor: colors.border }]}
+        onPress={() => router.push('/(tabs)/admin/categories')}
+      >
+        <MaterialIcons name="label" size={20} color={colors.textSecondary} />
+        <Text style={[styles.actionTextSecondary, { color: colors.textSecondary }]}>Categories</Text>
+      </TouchableOpacity>
+
+      {session?.role === 'super_admin' && (
+        <TouchableOpacity
+          style={[styles.actionBtnSecondary, { borderColor: colors.border }]}
+          onPress={() => router.push('/(tabs)/admin/users')}
+        >
+          <MaterialIcons name="group" size={20} color={colors.textSecondary} />
+          <Text style={[styles.actionTextSecondary, { color: colors.textSecondary }]}>Manage Users</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity
         style={[styles.actionBtnSecondary, { borderColor: colors.border }]}

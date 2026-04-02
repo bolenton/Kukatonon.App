@@ -4,6 +4,7 @@ import {
   StyleSheet, RefreshControl, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../../constants/AuthContext';
 import { useTheme } from '../../../constants/ThemeContext';
 import { fetchAdminStories, type AdminStory } from '../../../lib/adminApi';
@@ -57,6 +58,7 @@ export default function AllStoriesScreen() {
   }
 
   return (
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
     <FlatList
       style={{ backgroundColor: colors.bg }}
       contentContainerStyle={styles.list}
@@ -87,7 +89,7 @@ export default function AllStoriesScreen() {
               value={searchInput} onChangeText={setSearchInput} onSubmitEditing={handleSearch} returnKeyType="search"
             />
             <TouchableOpacity style={[styles.searchBtn, { backgroundColor: colors.earth.gold }]} onPress={handleSearch}>
-              <Text style={{ color: colors.earth.darkest, fontWeight: '600', fontSize: 13 }}>Search</Text>
+              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>Search</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -103,6 +105,13 @@ export default function AllStoriesScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} tintColor={colors.earth.gold} colors={[colors.earth.gold]} />
       }
     />
+    <TouchableOpacity
+      style={[styles.fab, { backgroundColor: colors.earth.gold }]}
+      onPress={() => router.push('/(tabs)/admin/new-story')}
+    >
+      <MaterialIcons name="add" size={28} color="#fff" />
+    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -117,4 +126,5 @@ const styles = StyleSheet.create({
   searchBtn: { borderRadius: 10, paddingHorizontal: 14, justifyContent: 'center' },
   empty: { alignItems: 'center', paddingTop: 40 },
   emptyText: { fontSize: 14 },
+  fab: { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 5 },
 });

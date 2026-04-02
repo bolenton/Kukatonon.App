@@ -38,9 +38,7 @@ export default function AdminLoginPage() {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-14 h-14 bg-earth-gold rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-earth-darkest font-bold text-2xl font-serif">K</span>
-            </div>
+            <img src="/logo.png" alt="Kukatonon" className="w-14 h-14 rounded-xl object-cover mx-auto mb-4" />
             <h1 className="font-serif text-2xl font-bold text-gray-900">
               Admin Login
             </h1>

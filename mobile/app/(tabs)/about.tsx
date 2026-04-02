@@ -94,7 +94,7 @@ export default function AboutScreen() {
           style={[styles.contactButton, { backgroundColor: colors.earth.gold }]}
           onPress={() => Linking.openURL('tel:+231880710399')}
         >
-          <Text style={[styles.contactText, { color: colors.earth.darkest }]}>Call: +231 880 710 399</Text>
+          <Text style={[styles.contactText, { color: '#fff' }]}>Call: +231 880 710 399</Text>
         </Pressable>
 
         <Pressable

@@ -1,3 +1,5 @@
+import type { ContentBlock } from './api';
+
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://kukatonon.app';
 
 export class AdminApiError extends Error {
@@ -113,6 +115,8 @@ export async function updateStoryMeta(token: string, id: string, fields: {
   review_notes?: string;
   category_ids?: string[];
   is_featured?: boolean;
+  content_blocks?: ContentBlock[] | null;
+  cover_image_url?: string | null;
 }) {
   return adminFetch(token, `/api/admin/stories/${id}`, {
     method: 'PATCH',
@@ -121,9 +125,68 @@ export async function updateStoryMeta(token: string, id: string, fields: {
 }
 
 // Categories
+export interface AdminCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  created_at: string;
+}
+
 export async function fetchAdminCategories(token: string) {
   const data = await adminFetch(token, '/api/admin/categories');
-  return data.categories as { id: string; name: string; slug: string }[];
+  return data.categories as AdminCategory[];
+}
+
+export async function createCategory(token: string, data: { name: string; description?: string }) {
+  return adminFetch(token, '/api/admin/categories', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }) as Promise<AdminCategory>;
+}
+
+export async function updateCategory(token: string, id: string, data: { name?: string; description?: string }) {
+  return adminFetch(token, `/api/admin/categories/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCategory(token: string, id: string) {
+  return adminFetch(token, `/api/admin/categories/${id}`, { method: 'DELETE' });
+}
+
+// Users
+export interface AdminUser {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  role: string;
+  created_at: string;
+}
+
+export async function fetchAdminUsers(token: string) {
+  const data = await adminFetch(token, '/api/admin/users');
+  return data.users as AdminUser[];
+}
+
+export async function createAdminUser(token: string, data: { email: string; password: string; full_name?: string; role: string }) {
+  return adminFetch(token, '/api/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }) as Promise<AdminUser>;
+}
+
+export async function updateAdminUser(token: string, id: string, data: { full_name?: string; role?: string }) {
+  return adminFetch(token, `/api/admin/users/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteAdminUser(token: string, id: string) {
+  return adminFetch(token, `/api/admin/users/${id}`, { method: 'DELETE' });
 }
 
 // Profile
@@ -138,9 +201,49 @@ export async function fetchAdminProfile(token: string) {
   return adminFetch(token, '/api/admin/profile') as Promise<AdminProfile>;
 }
 
-export async function updateAdminProfile(token: string, data: { full_name?: string }) {
+export async function updateAdminProfile(token: string, data: { full_name?: string; password?: string }) {
   return adminFetch(token, '/api/admin/profile', {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
 }
+
+// Upload
+export async function getUploadUrl(token: string, filename: string, contentType: string, type: 'image' | 'video') {
+  return adminFetch(token, '/api/admin/upload', {
+    method: 'POST',
+    body: JSON.stringify({ filename, contentType, type }),
+  }) as Promise<{ signedUrl: string; token: string; path: string; publicUrl: string }>;
+}
+
+export async function uploadMedia(
+  token: string,
+  uri: string,
+  filename: string,
+  mimeType: string,
+  type: 'image' | 'video'
+): Promise<string> {
+  const { signedUrl, publicUrl } = await getUploadUrl(token, filename, mimeType, type);
+
+  // React Native: read file as blob via fetch on the local URI, then upload
+  // Use FormData approach which RN handles natively for file URIs
+  const file = {
+    uri,
+    name: filename,
+    type: mimeType,
+  } as unknown as Blob;
+
+  const uploadRes = await fetch(signedUrl, {
+    method: 'PUT',
+    body: file,
+    headers: { 'Content-Type': mimeType },
+  });
+
+  if (!uploadRes.ok) {
+    throw new Error(`Upload failed: ${uploadRes.status}`);
+  }
+
+  return publicUrl;
+}
+
+export { type ContentBlock } from './api';

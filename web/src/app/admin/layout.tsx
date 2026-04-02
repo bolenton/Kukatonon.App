@@ -67,9 +67,7 @@ export default function AdminLayout({
       <aside className="w-64 bg-white border-r border-gray-200 hidden lg:flex flex-col fixed inset-y-0 left-0 z-30">
         <div className="p-6 border-b border-gray-200">
           <Link href="/admin" className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-earth-gold rounded-lg flex items-center justify-center">
-              <span className="text-earth-darkest font-bold text-sm font-serif">K</span>
-            </div>
+            <img src="/logo.png" alt="Kukatonon" className="w-8 h-8 rounded-lg object-cover" />
             <div>
               <h1 className="font-bold font-serif text-gray-900">Kukatonon</h1>
               <p className="text-xs text-gray-400">Admin Panel</p>

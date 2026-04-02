@@ -19,9 +19,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-earth-gold rounded-lg flex items-center justify-center">
-              <span className="text-earth-darkest font-bold text-lg font-serif">K</span>
-            </div>
+            <img src="/logo.png" alt="Kukatonon" className="h-10 w-10 rounded-lg object-cover" />
             <div>
               <h1 className="text-lg sm:text-xl font-bold font-serif tracking-wide" style={{ color: "var(--site-header-text)" }}>
                 Kukatonon

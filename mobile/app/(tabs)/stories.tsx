@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   searchRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   searchInput: { flex: 1, backgroundColor: sc.white, borderWidth: 1, borderColor: sc.gray[200], borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: sc.earth.dark },
   searchButton: { backgroundColor: sc.earth.gold, borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' },
-  searchButtonText: { color: sc.earth.darkest, fontSize: 14, fontWeight: '600' },
+  searchButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   categoriesRow: { marginBottom: 12 },
   categoriesContent: { gap: 8 },
   categoryPill: { backgroundColor: sc.gray[100], paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },

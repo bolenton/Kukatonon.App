@@ -76,9 +76,12 @@ export async function POST(request: NextRequest) {
   if (error || !user) return NextResponse.json({ error }, { status });
 
   const body = await request.json();
-  const errors = validateStoryContent(body);
-  if (errors.length > 0) {
-    return NextResponse.json({ errors }, { status: 422 });
+  // Admin creation: only require title and honoree_name (content added later via editor)
+  if (!body.title?.trim()) {
+    return NextResponse.json({ errors: [{ field: 'title', message: 'Title is required' }] }, { status: 422 });
+  }
+  if (!body.honoree_name?.trim()) {
+    return NextResponse.json({ errors: [{ field: 'honoree_name', message: 'Honoree name is required' }] }, { status: 422 });
   }
 
   const { data, error: insertError } = await supabase

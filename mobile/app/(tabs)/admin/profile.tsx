@@ -16,6 +16,8 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [fullName, setFullName] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const load = useCallback(async () => {
     if (!session?.token) return;
@@ -34,9 +36,21 @@ export default function ProfileScreen() {
 
   async function handleSave() {
     if (!session?.token) return;
+    if (password && password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
+      return;
+    }
+    if (password && password.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters.');
+      return;
+    }
     setSaving(true);
     try {
-      await updateAdminProfile(session.token, { full_name: fullName });
+      const updates: { full_name?: string; password?: string } = { full_name: fullName };
+      if (password) updates.password = password;
+      await updateAdminProfile(session.token, updates);
+      setPassword('');
+      setConfirmPassword('');
       Alert.alert('Saved', 'Profile updated.');
     } catch {
       Alert.alert('Error', 'Failed to update profile');
@@ -88,12 +102,35 @@ export default function ProfileScreen() {
           <Text style={[styles.readOnlyText, { color: colors.textMuted }]}>{profile?.email}</Text>
         </View>
 
+        <View style={[styles.divider, { borderTopColor: colors.border }]} />
+        <Text style={[styles.sectionHint, { color: colors.textMuted }]}>Leave blank to keep current password</Text>
+
+        <Text style={[styles.label, { color: colors.textSecondary }]}>New Password</Text>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Min 8 characters"
+          placeholderTextColor={colors.textMuted}
+          secureTextEntry
+        />
+
+        <Text style={[styles.label, { color: colors.textSecondary }]}>Confirm Password</Text>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          placeholder="Confirm new password"
+          placeholderTextColor={colors.textMuted}
+          secureTextEntry
+        />
+
         <TouchableOpacity
           style={[styles.saveBtn, { backgroundColor: colors.earth.gold }]}
           onPress={handleSave}
           disabled={saving}
         >
-          <Text style={[styles.saveBtnText, { color: colors.earth.darkest }]}>
+          <Text style={[styles.saveBtnText, { color: '#fff' }]}>
             {saving ? 'Saving...' : 'Save Changes'}
           </Text>
         </TouchableOpacity>
@@ -121,6 +158,7 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
   readOnly: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12 },
   readOnlyText: { fontSize: 15 },
+  sectionHint: { fontSize: 12, marginTop: 4 },
   saveBtn: { marginTop: 20, alignItems: 'center', padding: 14, borderRadius: 12 },
   saveBtnText: { fontSize: 16, fontWeight: '700' },
   divider: { borderTopWidth: 1, marginVertical: 24 },

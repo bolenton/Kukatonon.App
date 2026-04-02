@@ -17,6 +17,9 @@ export default function AdminLayout() {
       <Stack.Screen name="pending" options={{ title: 'Pending Review' }} />
       <Stack.Screen name="stories" options={{ title: 'All Stories' }} />
       <Stack.Screen name="profile" options={{ title: 'Profile' }} />
+      <Stack.Screen name="new-story" options={{ title: 'New Story' }} />
+      <Stack.Screen name="categories" options={{ title: 'Categories' }} />
+      <Stack.Screen name="users" options={{ title: 'Manage Users' }} />
       <Stack.Screen name="story/[id]" options={{ title: 'Review Story' }} />
     </Stack>
   );
