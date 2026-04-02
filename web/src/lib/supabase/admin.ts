@@ -3,15 +3,23 @@ import { createClient } from './server';
 export async function requireAdmin(request?: Request) {
   // If a Bearer token is provided (mobile), use token-based auth
   if (request) {
-    const authHeader = request.headers.get('authorization');
-    console.log('[requireAdmin] authHeader present:', !!authHeader, 'value:', authHeader?.substring(0, 30));
+    let authHeader = request.headers.get('authorization');
+
+    // Vercel Smart Cache moves Authorization into x-vercel-sc-headers
+    if (!authHeader) {
+      const scHeaders = request.headers.get('x-vercel-sc-headers');
+      if (scHeaders) {
+        try {
+          const parsed = JSON.parse(scHeaders);
+          authHeader = parsed['Authorization'] || parsed['authorization'] || null;
+        } catch {}
+      }
+    }
+
     const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
     if (bearerToken) {
-      console.log('[requireAdmin] using Bearer token path');
       return requireAdminWithToken(bearerToken);
     }
-  } else {
-    console.log('[requireAdmin] no request object passed');
   }
 
   // Default: cookie-based auth (web)
