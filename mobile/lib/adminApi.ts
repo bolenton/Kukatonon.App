@@ -9,7 +9,6 @@ export class AdminApiError extends Error {
 }
 
 export async function adminFetch(token: string, path: string, options?: RequestInit) {
-  console.log(`[adminApi] token length: ${token?.length}, first 20: ${token?.substring(0, 20)}...`);
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {

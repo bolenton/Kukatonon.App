@@ -6,11 +6,6 @@ import { createSlug } from '@/lib/slugify';
 import { createServiceClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
-  // Debug: log all headers
-  const hdrs: Record<string, string> = {};
-  request.headers.forEach((v, k) => { hdrs[k] = k === 'authorization' ? v.substring(0, 30) + '...' : v.substring(0, 50); });
-  console.log('[stories GET] headers:', JSON.stringify(hdrs));
-
   const { error, status, supabase } = await requireAdmin(request);
   if (error) return NextResponse.json({ error }, { status });
 
