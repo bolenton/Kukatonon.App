@@ -6,7 +6,6 @@ import { createSlug } from '@/lib/slugify';
 import { createServiceClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
-  try {
   const { error, status, supabase } = await requireAdmin(request);
   if (error) return NextResponse.json({ error }, { status });
 
@@ -70,10 +69,6 @@ export async function GET(request: NextRequest) {
     stories: enriched,
     pagination: { page, limit, total: count || 0, totalPages: Math.ceil((count || 0) / limit) },
   });
-  } catch (err) {
-    console.error('[admin/stories GET]', err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
-  }
 }
 
 export async function POST(request: NextRequest) {
