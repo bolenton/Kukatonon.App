@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../constants/ThemeContext';
 
 export default function TabLayout() {
@@ -38,8 +38,8 @@ export default function TabLayout() {
         options={{
           title: 'Kukatonon',
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 22 }}>{'\u2302'}</Text>
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="home" size={size} color={color} />
           ),
         }}
       />
@@ -47,8 +47,8 @@ export default function TabLayout() {
         name="stories"
         options={{
           title: 'Stories',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 22 }}>{'\u2261'}</Text>
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="auto-stories" size={size} color={color} />
           ),
         }}
       />
@@ -56,8 +56,8 @@ export default function TabLayout() {
         name="about"
         options={{
           title: 'About',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ color, fontSize: 22 }}>{'\u2139'}</Text>
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="info-outline" size={size} color={color} />
           ),
         }}
       />

@@ -15,7 +15,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.kukatonon.mobile"
+      "bundleIdentifier": "app.kukatonon.mobile",
+      "associatedDomains": [
+        "applinks:kukatonon.app",
+        "applinks:www.kukatonon.app"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +27,26 @@
         "backgroundColor": "#1a0f0a"
       },
       "package": "app.kukatonon.mobile",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "kukatonon.app",
+              "pathPrefix": "/stories/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.kukatonon.app",
+              "pathPrefix": "/stories/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",

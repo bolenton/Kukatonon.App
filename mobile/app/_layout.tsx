@@ -34,6 +34,13 @@ function RootStack() {
             headerBackTitle: 'Back',
           }}
         />
+        <Stack.Screen
+          name="stories/[slug]"
+          options={{
+            title: 'Loading...',
+            headerBackTitle: 'Back',
+          }}
+        />
       </Stack>
     </>
   );
