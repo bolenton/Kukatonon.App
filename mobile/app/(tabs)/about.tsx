@@ -103,6 +103,17 @@ export default function AboutScreen() {
           <Text style={[styles.websiteText, { color: colors.earth.gold }]}>Visit kukatonon.app</Text>
         </Pressable>
 
+        {/* Legal Links */}
+        <View style={styles.legalRow}>
+          <Pressable onPress={() => Linking.openURL('https://kukatonon.app/privacy')}>
+            <Text style={[styles.legalLink, { color: colors.textMuted }]}>Privacy Policy</Text>
+          </Pressable>
+          <Text style={[styles.legalDot, { color: colors.textMuted }]}>&middot;</Text>
+          <Pressable onPress={() => Linking.openURL('https://kukatonon.app/terms')}>
+            <Text style={[styles.legalLink, { color: colors.textMuted }]}>Terms of Service</Text>
+          </Pressable>
+        </View>
+
         {/* Theme Toggle */}
         <View style={[styles.themeSection, { borderTopColor: colors.border }]}>
           <View style={styles.themeInfo}>
@@ -211,6 +222,20 @@ const styles = StyleSheet.create({
   websiteText: {
     fontWeight: '700',
     fontSize: 15,
+  },
+  legalRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 20,
+  },
+  legalLink: {
+    fontSize: 13,
+    textDecorationLine: 'underline',
+  },
+  legalDot: {
+    fontSize: 13,
   },
   themeSection: {
     flexDirection: 'row',
