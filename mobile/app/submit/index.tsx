@@ -44,24 +44,18 @@ export default function SubmitStoryScreen() {
 
   const [consent, setConsent] = useState(false);
 
-  function renderHeaderLeft() {
-    const canGoBack = router.canGoBack();
-
+  function renderHomeHeaderLeft() {
     return (
       <Pressable
+        style={styles.headerButton}
         hitSlop={8}
-        onPress={() => {
-          if (router.canGoBack()) {
-            router.back();
-            return;
-          }
-
-          router.replace('/(tabs)');
-        }}
+        onPress={() => router.replace('/(tabs)')}
       >
-        <Text style={[styles.headerLink, { color: colors.headerText }]}>
-          {`< ${canGoBack ? 'Back' : 'Home'}`}
-        </Text>
+        <MaterialIcons
+          name="arrow-back-ios-new"
+          size={20}
+          color={colors.headerText}
+        />
       </Pressable>
     );
   }
@@ -185,8 +179,8 @@ export default function SubmitStoryScreen() {
         <Stack.Screen
           options={{
             title: 'Thank You',
-            headerBackVisible: false,
-            headerLeft: renderHeaderLeft,
+            headerBackButtonDisplayMode: 'minimal',
+            headerLeft: router.canGoBack() ? undefined : renderHomeHeaderLeft,
           }}
         />
         <View style={[styles.successContainer, { backgroundColor: colors.bg }]}>
@@ -214,8 +208,8 @@ export default function SubmitStoryScreen() {
       <Stack.Screen
         options={{
           title: 'Share a Story',
-          headerBackVisible: false,
-          headerLeft: renderHeaderLeft,
+          headerBackButtonDisplayMode: 'minimal',
+          headerLeft: router.canGoBack() ? undefined : renderHomeHeaderLeft,
         }}
       />
       <View style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -339,5 +333,5 @@ const styles = StyleSheet.create({
   successText: { fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
   successBtn: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12 },
   successBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  headerLink: { fontSize: 16, fontWeight: '600' },
+  headerButton: { alignItems: 'center', justifyContent: 'center', width: 28, height: 28 },
 });
