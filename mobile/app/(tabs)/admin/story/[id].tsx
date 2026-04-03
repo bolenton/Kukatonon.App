@@ -7,6 +7,11 @@ import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import {
+  useAudioRecorder, useAudioRecorderState,
+  requestRecordingPermissionsAsync, setAudioModeAsync, RecordingPresets,
+} from 'expo-audio';
 import { useAuth } from '../../../../constants/AuthContext';
 import { useTheme } from '../../../../constants/ThemeContext';
 import {
@@ -44,7 +49,11 @@ export default function StoryReviewScreen() {
   const [showPreview, setShowPreview] = useState(false);
   const [showFullText, setShowFullText] = useState(false);
   const [showCoverPicker, setShowCoverPicker] = useState(false);
+  const [showAudioOptions, setShowAudioOptions] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(recorder, 500);
 
   const load = useCallback(async () => {
     if (!session?.token) return;
@@ -117,6 +126,64 @@ export default function StoryReviewScreen() {
       addBlock({ id: makeId(), type: 'video', url });
     } catch { Alert.alert('Error', 'Upload failed'); }
     finally { setUploading(false); }
+  }
+
+  async function pickAudioFile() {
+    setShowAudioOptions(false);
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ['audio/*'],
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+    if (result.canceled || !result.assets[0] || !session?.token) return;
+
+    const asset = result.assets[0];
+    setUploadingAudio(true);
+    try {
+      const filename = asset.name || `audio_${Date.now()}.m4a`;
+      const mimeType = asset.mimeType || 'audio/mp4';
+      const url = await uploadMedia(session.token, asset.uri, filename, mimeType, 'audio');
+      addBlock({ id: makeId(), type: 'audio', url });
+    } catch {
+      Alert.alert('Error', 'Audio upload failed.');
+    } finally {
+      setUploadingAudio(false);
+    }
+  }
+
+  async function startAudioRecording() {
+    try {
+      const perm = await requestRecordingPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Permission needed', 'Microphone access is required to record audio.');
+        return;
+      }
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+    } catch {
+      Alert.alert('Error', 'Could not start recording.');
+    }
+  }
+
+  async function stopAudioRecording() {
+    if (!session?.token) return;
+    await recorder.stop();
+    await setAudioModeAsync({ allowsRecording: false });
+    const uri = recorder.uri;
+    if (!uri) return;
+
+    setUploadingAudio(true);
+    try {
+      const filename = `narration_${Date.now()}.m4a`;
+      const url = await uploadMedia(session.token, uri, filename, 'audio/mp4', 'audio');
+      setShowAudioOptions(false);
+      addBlock({ id: makeId(), type: 'audio', url });
+    } catch {
+      Alert.alert('Error', 'Failed to upload audio recording.');
+    } finally {
+      setUploadingAudio(false);
+    }
   }
 
   async function handleSave() {
@@ -379,7 +446,7 @@ export default function StoryReviewScreen() {
 
       {/* FAB */}
       <TouchableOpacity style={[styles.fab, { backgroundColor: colors.earth.gold }]} onPress={() => setShowFab(true)}>
-        {uploading ? <ActivityIndicator color="#fff" /> : <MaterialIcons name="add" size={28} color="#fff" />}
+        {uploading || uploadingAudio ? <ActivityIndicator color="#fff" /> : <MaterialIcons name="add" size={28} color="#fff" />}
       </TouchableOpacity>
 
       {/* FAB Menu */}
@@ -395,11 +462,32 @@ export default function StoryReviewScreen() {
             <TouchableOpacity style={styles.fabItem} onPress={() => { setShowFab(false); pickVideo(); }}>
               <MaterialIcons name="videocam" size={22} color="#7c3aed" /><Text style={styles.fabItemText}>Video (Gallery)</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.fabItem} onPress={() => { setShowFab(false); setShowSource(true); }}>
+            <TouchableOpacity style={styles.fabItem} onPress={() => { setShowFab(false); setShowAudioOptions(true); }}>
               <MaterialIcons name="graphic-eq" size={22} color="#ea580c" /><Text style={styles.fabItemText}>Voice</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.fabItem} onPress={() => { addBlock({ id: makeId(), type: 'youtube', url: '' }); }}>
               <MaterialIcons name="smart-display" size={22} color="#dc2626" /><Text style={styles.fabItemText}>YouTube</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Audio Source Modal */}
+      <Modal visible={showAudioOptions} transparent animationType="fade" onRequestClose={() => setShowAudioOptions(false)}>
+        <Pressable style={styles.overlay} onPress={() => setShowAudioOptions(false)}>
+          <View style={[styles.fabMenu, { backgroundColor: colors.card }]}>
+            <TouchableOpacity style={styles.fabItem} onPress={pickAudioFile}>
+              <MaterialIcons name="upload-file" size={22} color="#ea580c" /><Text style={styles.fabItemText}>Upload from device</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.fabItem}
+              onPress={recorderState.isRecording ? stopAudioRecording : startAudioRecording}
+            >
+              <MaterialIcons name={recorderState.isRecording ? 'stop-circle' : 'mic'} size={22} color={recorderState.isRecording ? '#dc2626' : '#ea580c'} />
+              <Text style={styles.fabItemText}>{recorderState.isRecording ? 'Stop recording' : 'Record now with mic'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.fabItem} onPress={() => { setShowAudioOptions(false); setShowSource(true); }}>
+              <MaterialIcons name="library-music" size={22} color="#2563eb" /><Text style={styles.fabItemText}>Use submitted voice</Text>
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -533,14 +621,6 @@ export default function StoryReviewScreen() {
                 ) : null}
               </View>
             ))}
-            {/* Location in preview */}
-            {hasLocation && showEventLocation && (
-              <StoryLocationMap
-                latitude={story.event_latitude!}
-                longitude={story.event_longitude!}
-                locationName={story.event_location_name}
-              />
-            )}
           </ScrollView>
         </View>
       </Modal>

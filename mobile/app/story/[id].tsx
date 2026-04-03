@@ -13,6 +13,7 @@ import { Image } from 'expo-image';
 import RenderHtml from 'react-native-render-html';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialIcons } from '@expo/vector-icons';
 import { fetchStory, type PublicStory, type ContentBlock } from '../../lib/api';
 import { extractVideoId } from '../../lib/youtube';
 import { colors as sc, fonts } from '../../constants/theme';
@@ -33,6 +34,7 @@ export default function StoryDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showMapOverlay, setShowMapOverlay] = useState(false);
   const [offline, setOffline] = useState(false);
 
   useEffect(() => {
@@ -78,7 +80,7 @@ export default function StoryDetailScreen() {
       />
       <ScrollView
         style={[styles.container, { backgroundColor: colors.bg }]}
-        contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
+        contentContainerStyle={{ paddingBottom: 150 + insets.bottom }}
       >
         {/* Cover Image */}
         {story.cover_image_url ? (
@@ -192,17 +194,26 @@ export default function StoryDetailScreen() {
           }
         })}
 
-        {/* Location Map */}
-        {story.show_event_location && story.event_latitude != null && story.event_longitude != null && (
-          <StoryLocationMap
-            latitude={story.event_latitude}
-            longitude={story.event_longitude}
-            locationName={story.event_location_name}
-          />
-        )}
-
         <View style={{ height: 24 }} />
       </ScrollView>
+
+      {story.show_event_location && story.event_latitude != null && story.event_longitude != null && (
+        <View
+          style={[
+            styles.mapActionWrap,
+            { bottom: Math.max(insets.bottom, 12) },
+          ]}
+          pointerEvents="box-none"
+        >
+          <Pressable
+            onPress={() => setShowMapOverlay(true)}
+            style={[styles.mapActionButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
+            <MaterialIcons name="map" size={18} color={colors.earth.gold} />
+            <Text style={[styles.mapActionText, { color: colors.text }]}>Map</Text>
+          </Pressable>
+        </View>
+      )}
 
       <View
         style={[
@@ -245,6 +256,30 @@ export default function StoryDetailScreen() {
           <Text style={styles.lightboxClose}>Tap to close</Text>
         </Pressable>
       )}
+
+      {showMapOverlay && story.show_event_location && story.event_latitude != null && story.event_longitude != null && (
+        <View style={styles.mapOverlay}>
+          <Pressable style={styles.mapOverlayBackdrop} onPress={() => setShowMapOverlay(false)} />
+          <View style={[styles.mapOverlayCard, { backgroundColor: colors.card }]}>
+            <View style={[styles.mapOverlayHeader, { borderBottomColor: colors.border }]}>
+              <View>
+                <Text style={[styles.mapOverlayLabel, { color: colors.earth.gold }]}>WHERE IT HAPPENED</Text>
+                {story.event_location_name ? (
+                  <Text style={[styles.mapOverlayTitle, { color: colors.text }]}>{story.event_location_name}</Text>
+                ) : null}
+              </View>
+              <Pressable onPress={() => setShowMapOverlay(false)}>
+                <MaterialIcons name="close" size={24} color={colors.text} />
+              </Pressable>
+            </View>
+            <StoryLocationMap
+              latitude={story.event_latitude}
+              longitude={story.event_longitude}
+              locationName={story.event_location_name}
+            />
+          </View>
+        </View>
+      )}
     </>
   );
 }
@@ -278,6 +313,30 @@ const styles = StyleSheet.create({
   blockImage: { width: '100%', aspectRatio: 16 / 10, borderRadius: 12 },
   blockCaption: { fontSize: 13, color: sc.earth.warm, opacity: 0.7, textAlign: 'center', marginTop: 6, fontStyle: 'italic' },
   blockMediaContainer: { marginBottom: 16 },
+  mapActionWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  mapActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+  mapActionText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
   floatingActionsWrap: {
     position: 'absolute',
     right: 20,
@@ -301,6 +360,48 @@ const styles = StyleSheet.create({
   actionDivider: {
     width: StyleSheet.hairlineWidth,
     alignSelf: 'stretch',
+  },
+  mapOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    padding: 20,
+    zIndex: 110,
+  },
+  mapOverlayBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  mapOverlayCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    maxHeight: '75%',
+  },
+  mapOverlayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  mapOverlayLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  mapOverlayTitle: {
+    fontFamily: fonts.serif,
+    fontSize: 18,
+    fontWeight: '700',
   },
 });
 
