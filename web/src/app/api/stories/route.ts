@@ -5,6 +5,7 @@ const PUBLIC_FIELDS = `
   id, title, slug, honoree_name, summary, content_html,
   youtube_urls, media_items, cover_image_url, content_blocks,
   category_ids, status, is_featured, source_type, submitted_by_name,
+  event_latitude, event_longitude, event_location_name,
   created_at, updated_at
 `;
 

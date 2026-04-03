@@ -138,6 +138,15 @@ export default function AboutScreen() {
             />
           </Pressable>
         </View>
+
+        {!isAdmin ? (
+          <Pressable
+            onPress={() => setShowLogin(true)}
+            style={[styles.adminLoginButton, { borderColor: colors.border }]}
+          >
+            <Text style={[styles.adminLoginText, { color: colors.textMuted }]}>Login in</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <View style={{ height: 40 }} />
@@ -256,6 +265,18 @@ const styles = StyleSheet.create({
   themeName: {
     fontSize: 13,
     marginTop: 2,
+  },
+  adminLoginButton: {
+    alignSelf: 'center',
+    marginTop: 28,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  adminLoginText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   toggleTrack: {
     width: 44,

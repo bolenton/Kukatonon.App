@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import StoryCard from '../../components/StoryCard';
+import OfflineBanner from '../../components/OfflineBanner';
 import { fetchStories, fetchCategories, type PublicStory, type CategoryInfo } from '../../lib/api';
 import { colors as staticColors, fonts } from '../../constants/theme';
 import { useTheme } from '../../constants/ThemeContext';
@@ -25,6 +26,7 @@ export default function StoriesScreen() {
   const [activeSearch, setActiveSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const [total, setTotal] = useState(0);
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     fetchCategories().then(setCategories);
@@ -39,6 +41,7 @@ export default function StoriesScreen() {
       });
       setStories(res.stories);
       setTotal(res.pagination.total);
+      setOffline(!!res.offline);
     } catch (err) {
       console.error('Failed to load stories:', err);
     } finally {
@@ -141,6 +144,8 @@ export default function StoriesScreen() {
               ))}
             </ScrollView>
           )}
+
+          {offline && <OfflineBanner />}
 
           {/* Active filters indicator */}
           {hasFilters && (

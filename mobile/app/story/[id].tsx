@@ -18,6 +18,10 @@ import { extractVideoId } from '../../lib/youtube';
 import { colors as sc, fonts } from '../../constants/theme';
 import { useTheme } from '../../constants/ThemeContext';
 import ShareStory from '../../components/ShareStory';
+import BookmarkButton from '../../components/BookmarkButton';
+import StoryLocationMap from '../../components/StoryLocationMap';
+import AudioPlayer from '../../components/AudioPlayer';
+import OfflineBanner from '../../components/OfflineBanner';
 
 export default function StoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -27,19 +31,14 @@ export default function StoryDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
         const data = await fetchStory(id);
-        console.log('[StoryDetail] fetched story:', data.id);
-        console.log('[StoryDetail] content_blocks:', data.content_blocks ? `${data.content_blocks.length} blocks` : 'null');
-        if (data.content_blocks) {
-          data.content_blocks.forEach((b, i) => console.log(`[StoryDetail]   block ${i}: type=${b.type}`));
-        }
-        console.log('[StoryDetail] media_items:', data.media_items?.length ?? 0);
-        console.log('[StoryDetail] youtube_urls:', data.youtube_urls?.length ?? 0);
         setStory(data);
+        setOffline(!!data.offline);
       } catch {
         setError('Story not found');
       } finally {
@@ -67,6 +66,7 @@ export default function StoryDetailScreen() {
 
   const images = story.media_items?.filter((m) => m.type === 'image') || [];
   const videos = story.media_items?.filter((m) => m.type === 'video') || [];
+  const audioItems = story.media_items?.filter((m) => m.type === 'audio') || [];
 
   return (
     <>
@@ -114,12 +114,21 @@ export default function StoryDetailScreen() {
             })}
             {story.submitted_by_name ? ` \u00b7 by ${story.submitted_by_name}` : ''}
           </Text>
-          <ShareStory
-            storyId={story.id}
-            storySlug={story.slug}
-            honoreeName={story.honoree_name}
-          />
+          <View style={styles.metaActions}>
+            <BookmarkButton story={story} />
+            <ShareStory
+              storyId={story.id}
+              storySlug={story.slug}
+              honoreeName={story.honoree_name}
+            />
+          </View>
         </View>
+
+        {offline && (
+          <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
+            <OfflineBanner />
+          </View>
+        )}
 
         {/* Summary */}
         {story.summary && (
@@ -240,6 +249,20 @@ export default function StoryDetailScreen() {
           </>
         )}
 
+        {/* Audio Narration */}
+        {audioItems.map((item, index) => (
+          <AudioPlayer key={`audio-${index}`} url={item.url} />
+        ))}
+
+        {/* Location Map */}
+        {story.event_latitude != null && story.event_longitude != null && (
+          <StoryLocationMap
+            latitude={story.event_latitude}
+            longitude={story.event_longitude}
+            locationName={story.event_location_name}
+          />
+        )}
+
         <View style={{ height: 40 }} />
       </ScrollView>
 
@@ -276,6 +299,7 @@ const styles = StyleSheet.create({
   coverName: { fontFamily: fonts.serif, fontSize: 28, fontWeight: '700', color: sc.earth.cream, marginBottom: 4 },
   coverTitle: { fontSize: 15, color: sc.earth.cream, opacity: 0.9 },
   meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, paddingBottom: 8 },
+  metaActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   metaText: { fontSize: 12, color: sc.earth.warm, opacity: 0.6 },
   summaryContainer: { marginHorizontal: 20, marginBottom: 16, borderLeftWidth: 4, borderLeftColor: sc.earth.gold, paddingLeft: 14 },
   summaryText: { fontFamily: fonts.serif, fontSize: 16, fontStyle: 'italic', color: sc.earth.warm, lineHeight: 26 },

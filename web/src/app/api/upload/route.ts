@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'filename and contentType required' }, { status: 400 });
   }
 
-  const mediaType = type === 'video' ? 'video' : 'image';
+  const mediaType = type === 'video' ? 'video' : type === 'audio' ? 'audio' : 'image';
   const path = generateStoragePath(mediaType, filename);
 
   const { data, error } = await supabase.storage

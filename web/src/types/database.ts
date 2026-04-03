@@ -5,7 +5,7 @@ export type SourceType = 'admin' | 'public_submission';
 export type AdminRole = 'super_admin' | 'moderator';
 
 export interface MediaItem {
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'audio';
   url: string;
   thumbnail_url?: string;
   crop?: { x: number; y: number; width: number; height: number; aspect: number };
@@ -36,6 +36,9 @@ export interface Story {
   approved_at: string | null;
   content_blocks: ContentBlock[] | null;
   category_ids: string[];
+  event_latitude: number | null;
+  event_longitude: number | null;
+  event_location_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -85,6 +88,9 @@ export interface SubmissionPayload {
   submitted_by_whatsapp?: string;
   submitted_by_email?: string;
   consent_confirmed: boolean;
+  event_latitude?: number;
+  event_longitude?: number;
+  event_location_name?: string;
 }
 
 export interface StoryCreatePayload {

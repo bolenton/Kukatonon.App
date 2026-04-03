@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import StoryCard from '../../components/StoryCard';
+import OfflineBanner from '../../components/OfflineBanner';
 import { fetchStories, type PublicStory } from '../../lib/api';
 import { colors as staticColors, fonts } from '../../constants/theme';
 import { useTheme } from '../../constants/ThemeContext';
@@ -17,18 +18,15 @@ import { useTheme } from '../../constants/ThemeContext';
 export default function HomeScreen() {
   const { mode, colors } = useTheme();
   const [featured, setFeatured] = useState<PublicStory[]>([]);
-  const [latest, setLatest] = useState<PublicStory[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [offline, setOffline] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
-      const [featuredRes, latestRes] = await Promise.all([
-        fetchStories({ featured: true, limit: 2 }),
-        fetchStories({ limit: 10 }),
-      ]);
+      const featuredRes = await fetchStories({ featured: true, limit: 4 });
       setFeatured(featuredRes.stories);
-      setLatest(latestRes.stories);
+      setOffline(!!featuredRes.offline);
     } catch (err) {
       console.error('Failed to load stories:', err);
     } finally {
@@ -81,6 +79,12 @@ export default function HomeScreen() {
         </Text>
       </View>
 
+      {offline && (
+        <View style={{ paddingHorizontal: 20, paddingTop: 12 }}>
+          <OfflineBanner />
+        </View>
+      )}
+
       {/* Featured */}
       {featured.length > 0 && (
         <View style={styles.section}>
@@ -92,23 +96,8 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Latest */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>RECENT MEMORIALS</Text>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Latest Stories</Text>
-        {latest.length > 0 ? (
-          latest
-            .filter((s) => !featured.find((f) => f.id === s.id))
-            .map((story) => <StoryCard key={story.id} story={story} />)
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>Stories Coming Soon</Text>
-            <Text style={styles.emptyDesc}>
-              Visit kukatonon.app to share a memorial story.
-            </Text>
-          </View>
-        )}
-
+      {/* View All link */}
+      <View style={{ alignItems: 'center', paddingVertical: 8 }}>
         <Link href="/stories" style={styles.viewAll}>
           <Text style={styles.viewAllText}>View All Stories</Text>
         </Link>
