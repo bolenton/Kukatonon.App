@@ -1,3 +1,4 @@
+import { MaterialIcons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Stack, router, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -7,24 +8,18 @@ import { AuthProvider } from '../constants/AuthContext';
 function RootStack() {
   const { mode, colors } = useTheme();
 
-  function renderBackOrHomeHeaderLeft() {
-    const canGoBack = router.canGoBack();
-
+  function renderHomeHeaderLeft() {
     return (
       <Pressable
+        style={styles.headerButton}
         hitSlop={8}
-        onPress={() => {
-          if (router.canGoBack()) {
-            router.back();
-            return;
-          }
-
-          router.replace('/(tabs)');
-        }}
+        onPress={() => router.replace('/(tabs)')}
       >
-        <Text style={[styles.headerLink, { color: colors.headerText }]}>
-          {`< ${canGoBack ? 'Back' : 'Home'}`}
-        </Text>
+        <MaterialIcons
+          name="arrow-back-ios-new"
+          size={20}
+          color={colors.headerText}
+        />
       </Pressable>
     );
   }
@@ -55,24 +50,24 @@ function RootStack() {
           name="story/[id]"
           options={{
             title: 'Memorial Story',
-            headerBackVisible: false,
-            headerLeft: renderBackOrHomeHeaderLeft,
+            headerBackButtonDisplayMode: 'minimal',
+            headerLeft: router.canGoBack() ? undefined : renderHomeHeaderLeft,
           }}
         />
         <Stack.Screen
           name="stories/[slug]"
           options={{
             title: 'Loading...',
-            headerBackVisible: false,
-            headerLeft: renderBackOrHomeHeaderLeft,
+            headerBackButtonDisplayMode: 'minimal',
+            headerLeft: router.canGoBack() ? undefined : renderHomeHeaderLeft,
           }}
         />
         <Stack.Screen
           name="submit"
           options={{
             title: 'Share a Story',
-            headerBackVisible: false,
-            headerLeft: renderBackOrHomeHeaderLeft,
+            headerBackButtonDisplayMode: 'minimal',
+            headerLeft: router.canGoBack() ? undefined : renderHomeHeaderLeft,
           }}
         />
         <Stack.Screen
@@ -87,9 +82,11 @@ function RootStack() {
 }
 
 const styles = StyleSheet.create({
-  headerLink: {
-    fontSize: 16,
-    fontWeight: '600',
+  headerButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 28,
+    height: 28,
   },
   errorBoundaryContainer: {
     flex: 1,
