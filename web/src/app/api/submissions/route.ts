@@ -38,6 +38,9 @@ export async function POST(request: NextRequest) {
       submitted_by_whatsapp: body.submitted_by_whatsapp?.trim() || null,
       submitted_by_email: body.submitted_by_email?.trim() || null,
       consent_confirmed: true,
+      event_latitude: body.event_latitude ?? null,
+      event_longitude: body.event_longitude ?? null,
+      event_location_name: body.event_location_name?.trim() || null,
     })
     .select('id')
     .single();

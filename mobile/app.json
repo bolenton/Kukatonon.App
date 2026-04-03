@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "scheme": "kukatonon",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -14,7 +14,7 @@
       "backgroundColor": "#1a0f0a"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "app.kukatonon.mobile",
       "associatedDomains": [
         "applinks:kukatonon.app",

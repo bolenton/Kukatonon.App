@@ -1,118 +1,167 @@
 import { useState, useRef } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView, Switch,
-  StyleSheet, Alert, ActivityIndicator, Platform,
+  View, Text, TouchableOpacity, ScrollView,
+  StyleSheet, Alert, ActivityIndicator, Platform, LayoutAnimation, UIManager, Pressable,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../constants/ThemeContext';
 import { fonts } from '../../constants/theme';
+import StepIndicator from '../../components/submit/StepIndicator';
+import InfoStep, { type InfoData } from '../../components/submit/InfoStep';
+import StoryStep, { type StoryData } from '../../components/submit/StoryStep';
+import MediaStep, { type MediaData } from '../../components/submit/MediaStep';
+import ReviewStep from '../../components/submit/ReviewStep';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://kukatonon.app';
-
-interface MediaItem {
-  type: 'image' | 'video';
-  url: string;
-}
+const TOTAL_STEPS = 4;
 
 export default function SubmitStoryScreen() {
   const { colors } = useTheme();
-  const [honoreeName, setHonoreeName] = useState('');
-  const [title, setTitle] = useState('');
-  const [summary, setSummary] = useState('');
-  const [storyText, setStoryText] = useState('');
-  const [youtubeUrls, setYoutubeUrls] = useState<string[]>([]);
-  const [youtubeInput, setYoutubeInput] = useState('');
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
-  const [submitterName, setSubmitterName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [email, setEmail] = useState('');
-  const [consent, setConsent] = useState(false);
+  const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const scrollRef = useRef<ScrollView>(null);
 
-  // Android: scroll to focused input
-  const handleFocus = (y: number) => {
-    if (Platform.OS === 'android') {
-      setTimeout(() => scrollRef.current?.scrollTo({ y: Math.max(0, y - 120), animated: true }), 300);
-    }
-  };
+  // ─── Form State ───
+  const [info, setInfo] = useState<InfoData>({
+    honoreeName: '', title: '', summary: '',
+    submitterName: '', phone: '', whatsapp: '', email: '',
+  });
 
-  async function pickImages() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      quality: 0.8,
-    });
-    if (result.canceled) return;
+  const [story, setStory] = useState<StoryData>({
+    storyText: '', audioUrl: null, audioLocalUri: null, videoParts: [],
+  });
 
-    for (const asset of result.assets) {
-      try {
-        // Get upload URL
-        const res = await fetch(`${API_BASE}/api/upload`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: asset.fileName || 'photo.jpg', contentType: asset.mimeType || 'image/jpeg', type: 'image' }),
-        });
-        const { signedUrl, publicUrl } = await res.json();
+  const [media, setMedia] = useState<MediaData>({
+    images: [], youtubeUrls: [], eventLocation: null,
+  });
 
-        // Upload
-        const file = { uri: asset.uri, name: asset.fileName || 'photo.jpg', type: asset.mimeType || 'image/jpeg' } as unknown as Blob;
-        await fetch(signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': asset.mimeType || 'image/jpeg' } });
+  const [consent, setConsent] = useState(false);
 
-        setMediaItems(prev => [...prev, { type: 'image', url: publicUrl }]);
-      } catch {
-        Alert.alert('Error', 'Failed to upload image');
-      }
-    }
+  function renderHeaderLeft() {
+    const canGoBack = router.canGoBack();
+
+    return (
+      <Pressable
+        hitSlop={8}
+        onPress={() => {
+          if (router.canGoBack()) {
+            router.back();
+            return;
+          }
+
+          router.replace('/(tabs)');
+        }}
+      >
+        <Text style={[styles.headerLink, { color: colors.headerText }]}>
+          {`< ${canGoBack ? 'Back' : 'Home'}`}
+        </Text>
+      </Pressable>
+    );
   }
 
-  function addYoutube() {
-    const url = youtubeInput.trim();
-    if (!url) return;
-    const ytRegex = /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-    if (!ytRegex.test(url)) {
-      setErrors(prev => ({ ...prev, youtube: 'Invalid YouTube URL' }));
-      return;
+  // ─── Validation ───
+  function validateStep(s: number): boolean {
+    const errs: Record<string, string> = {};
+
+    if (s === 0) {
+      if (!info.honoreeName.trim()) errs.honoree_name = 'Honoree name is required';
+      if (!info.title.trim()) errs.title = 'Story title is required';
+      if (!info.submitterName.trim()) errs.submitted_by_name = 'Your name is required';
+      const hasContact = info.phone.trim() || info.whatsapp.trim() || info.email.trim();
+      if (!hasContact) errs.contact = 'At least one contact method is required';
+      if (info.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info.email))
+        errs.submitted_by_email = 'Please enter a valid email address';
     }
-    setYoutubeUrls(prev => [...prev, url]);
-    setYoutubeInput('');
-    setErrors(prev => { const n = { ...prev }; delete n.youtube; return n; });
+
+    if (s === 1) {
+      const hasContent = story.storyText.trim() || story.audioUrl || story.videoParts.length > 0;
+      if (!hasContent) errs.content = 'Please add at least one type of content (text, audio, or video)';
+    }
+
+    // Step 2 (media) has no required fields
+    // Step 3 (review) validates consent
+    if (s === 3) {
+      if (!consent) errs.consent_confirmed = 'You must confirm consent to submit a story';
+    }
+
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   }
 
-  async function handleSubmit() {
+  function goNext() {
+    if (!validateStep(step)) return;
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }
+
+  function goBack() {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setErrors({});
+    setStep((s) => Math.max(s - 1, 0));
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }
+
+  // ─── Submit ───
+  async function handleSubmit() {
+    if (!validateStep(3)) return;
     setSubmitting(true);
+    setErrors({});
+
+    // Build media_items array
+    const mediaItems: { type: string; url: string }[] = [];
+    for (const img of media.images) {
+      mediaItems.push({ type: 'image', url: img.url });
+    }
+    for (const vid of story.videoParts) {
+      mediaItems.push({ type: 'video', url: vid.url });
+    }
+    if (story.audioUrl) {
+      mediaItems.push({ type: 'audio', url: story.audioUrl });
+    }
+
     try {
       const res = await fetch(`${API_BASE}/api/submissions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          honoree_name: honoreeName,
-          title,
-          summary: summary || undefined,
-          content_html: storyText ? `<p>${storyText.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>` : undefined,
-          youtube_urls: youtubeUrls.length > 0 ? youtubeUrls : undefined,
+          honoree_name: info.honoreeName,
+          title: info.title,
+          summary: info.summary || undefined,
+          content_html: story.storyText
+            ? `<p>${story.storyText.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+            : undefined,
+          youtube_urls: media.youtubeUrls.length > 0 ? media.youtubeUrls : undefined,
           media_items: mediaItems.length > 0 ? mediaItems : undefined,
-          cover_image_url: mediaItems.find(m => m.type === 'image')?.url || undefined,
-          submitted_by_name: submitterName,
-          submitted_by_phone: phone || undefined,
-          submitted_by_whatsapp: whatsapp || undefined,
-          submitted_by_email: email || undefined,
+          cover_image_url: media.images[0]?.url || undefined,
+          submitted_by_name: info.submitterName,
+          submitted_by_phone: info.phone || undefined,
+          submitted_by_whatsapp: info.whatsapp || undefined,
+          submitted_by_email: info.email || undefined,
           consent_confirmed: consent,
+          event_latitude: media.eventLocation?.latitude ?? undefined,
+          event_longitude: media.eventLocation?.longitude ?? undefined,
+          event_location_name: media.eventLocation?.name || undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
         if (data.errors) {
           const map: Record<string, string> = {};
-          data.errors.forEach((e: { field: string; message: string }) => { map[e.field] = e.message; });
+          data.errors.forEach((e: { field: string; message: string }) => {
+            map[e.field] = e.message;
+          });
           setErrors(map);
+          // Navigate back to the step with the first error
+          if (map.honoree_name || map.title || map.submitted_by_name || map.contact || map.submitted_by_email) setStep(0);
+          else if (map.content) setStep(1);
         } else {
           setErrors({ form: data.error || 'Something went wrong' });
         }
@@ -120,23 +169,35 @@ export default function SubmitStoryScreen() {
       }
       setSubmitted(true);
     } catch {
-      setErrors({ form: 'Failed to submit. Please try again.' });
+      setErrors({ form: 'Failed to submit. Please check your connection and try again.' });
     } finally {
       setSubmitting(false);
     }
   }
 
+  // ─── Success Screen ───
   if (submitted) {
     return (
       <>
-        <Stack.Screen options={{ title: 'Thank You' }} />
+        <Stack.Screen
+          options={{
+            title: 'Thank You',
+            headerBackVisible: false,
+            headerLeft: renderHeaderLeft,
+          }}
+        />
         <View style={[styles.successContainer, { backgroundColor: colors.bg }]}>
-          <MaterialIcons name="check-circle" size={64} color={colors.earth.gold} />
-          <Text style={[styles.successTitle, { color: colors.text }]}>Thank You</Text>
+          <View style={[styles.successIcon, { backgroundColor: colors.earth.gold + '18' }]}>
+            <MaterialIcons name="check-circle" size={64} color={colors.earth.gold} />
+          </View>
+          <Text style={[styles.successTitle, { color: colors.text }]}>Story Submitted</Text>
           <Text style={[styles.successText, { color: colors.textSecondary }]}>
-            Your memorial story has been submitted successfully. Our team will review it and make it available once approved.
+            Thank you for honoring {info.honoreeName}'s memory. Our team will review your submission and make it available once approved.
           </Text>
-          <TouchableOpacity style={[styles.successBtn, { backgroundColor: colors.earth.gold }]} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={[styles.successBtn, { backgroundColor: colors.earth.gold }]}
+            onPress={() => router.back()}
+          >
             <Text style={styles.successBtnText}>Return Home</Text>
           </TouchableOpacity>
         </View>
@@ -144,188 +205,136 @@ export default function SubmitStoryScreen() {
     );
   }
 
+  // ─── Wizard ───
   return (
     <>
-      <Stack.Screen options={{ title: 'Share a Story' }} />
+      <Stack.Screen
+        options={{
+          title: 'Share a Story',
+          headerBackVisible: false,
+          headerLeft: renderHeaderLeft,
+        }}
+      />
+      <View style={[styles.container, { backgroundColor: colors.bg }]}>
+        {/* Step indicator */}
+        <StepIndicator currentStep={step} />
+
+        {/* Scrollable content */}
         <ScrollView
           ref={scrollRef}
-          style={[styles.container, { backgroundColor: colors.bg }]}
-          contentContainerStyle={[styles.content, Platform.OS === 'android' && { paddingBottom: 300 }]}
+          style={styles.scroll}
+          contentContainerStyle={[styles.scrollContent, Platform.OS === 'android' && { paddingBottom: 300 }]}
           keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
           keyboardDismissMode="interactive"
         >
-
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={[styles.headerLabel, { color: colors.earth.gold }]}>SHARE A MEMORY</Text>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Submit a Memorial Story</Text>
-            <Text style={[styles.headerDesc, { color: colors.textMuted }]}>
-              Help us honor the memory of those who were lost. Your submission will be reviewed before publishing.
-            </Text>
-          </View>
-
           {errors.form && (
-            <View style={styles.errorBanner}><Text style={styles.errorBannerText}>{errors.form}</Text></View>
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorBannerText}>{errors.form}</Text>
+            </View>
           )}
 
-          {/* Honoree Info */}
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>About the Person Being Honored</Text>
-
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Honoree Name *</Text>
-            <TextInput style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-              value={honoreeName} onChangeText={setHonoreeName} placeholder="Full name" placeholderTextColor={colors.textMuted} />
-            {errors.honoree_name && <Text style={styles.errorText}>{errors.honoree_name}</Text>}
-
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Story Title *</Text>
-            <TextInput style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-              value={title} onChangeText={setTitle} placeholder="A title for this memorial" placeholderTextColor={colors.textMuted} />
-            {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Brief Summary</Text>
-            <TextInput style={[styles.input, styles.multiline, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-              value={summary} onChangeText={setSummary} placeholder="Optional summary" placeholderTextColor={colors.textMuted} multiline numberOfLines={2} />
-          </View>
-
-          {/* Story Content */}
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>The Story</Text>
-            <Text style={[styles.hint, { color: colors.textMuted }]}>Share text, photos, or YouTube links. At least one is required.</Text>
-            {errors.content && <Text style={styles.errorText}>{errors.content}</Text>}
-
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Written Story</Text>
-            <TextInput style={[styles.input, styles.storyInput, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-              value={storyText} onChangeText={setStoryText}
-              placeholder="Tell their story... Share memories, describe who they were..."
-              placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" />
-
-            {/* Photos */}
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Photos</Text>
-            <View style={styles.mediaGrid}>
-              {mediaItems.filter(m => m.type === 'image').map((item, i) => (
-                <View key={i} style={styles.mediaThumb}>
-                  <Image source={{ uri: item.url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-                  <TouchableOpacity style={styles.mediaRemove} onPress={() => setMediaItems(prev => prev.filter((_, idx) => idx !== i))}>
-                    <MaterialIcons name="close" size={14} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-              <TouchableOpacity style={[styles.addMedia, { borderColor: colors.border }]} onPress={pickImages}>
-                <MaterialIcons name="add-photo-alternate" size={28} color={colors.textMuted} />
-                <Text style={[styles.addMediaText, { color: colors.textMuted }]}>Add Photos</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* YouTube */}
-            <Text style={[styles.label, { color: colors.textSecondary }]}>YouTube Videos</Text>
-            {youtubeUrls.map((url, i) => (
-              <View key={i} style={[styles.ytRow, { borderColor: colors.border }]}>
-                <Text style={[styles.ytUrl, { color: colors.textSecondary }]} numberOfLines={1}>{url}</Text>
-                <TouchableOpacity onPress={() => setYoutubeUrls(prev => prev.filter((_, idx) => idx !== i))}>
-                  <MaterialIcons name="close" size={18} color="#dc2626" />
-                </TouchableOpacity>
-              </View>
-            ))}
-            <View style={styles.ytInputRow}>
-              <TextInput style={[styles.input, { flex: 1, backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-                value={youtubeInput} onChangeText={setYoutubeInput} placeholder="Paste YouTube URL" placeholderTextColor={colors.textMuted}
-                onSubmitEditing={addYoutube} returnKeyType="done" />
-              <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.earth.gold }]} onPress={addYoutube}>
-                <Text style={styles.addBtnText}>Add</Text>
-              </TouchableOpacity>
-            </View>
-            {errors.youtube && <Text style={styles.errorText}>{errors.youtube}</Text>}
-          </View>
-
-          {/* Your Info */}
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Your Information</Text>
-            <Text style={[styles.hint, { color: colors.textMuted }]}>Private — only visible to our team, never shown publicly.</Text>
-
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Your Name *</Text>
-            <TextInput style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-              value={submitterName} onChangeText={setSubmitterName} placeholder="Your full name" placeholderTextColor={colors.textMuted} />
-            {errors.submitted_by_name && <Text style={styles.errorText}>{errors.submitted_by_name}</Text>}
-
-            <Text style={[styles.hint, { color: colors.textMuted, marginTop: 8 }]}>At least one contact method required.</Text>
-            {errors.contact && <Text style={styles.errorText}>{errors.contact}</Text>}
-
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Phone</Text>
-            <TextInput style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-              value={phone} onChangeText={setPhone} placeholder="+231..." placeholderTextColor={colors.textMuted} keyboardType="phone-pad" />
-
-            <Text style={[styles.label, { color: colors.textSecondary }]}>WhatsApp</Text>
-            <TextInput style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-              value={whatsapp} onChangeText={setWhatsapp} placeholder="+231..." placeholderTextColor={colors.textMuted} keyboardType="phone-pad" />
-
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Email</Text>
-            <TextInput style={[styles.input, { backgroundColor: colors.bg, borderColor: colors.border, color: colors.text }]}
-              value={email} onChangeText={setEmail} placeholder="your@email.com" placeholderTextColor={colors.textMuted} keyboardType="email-address" autoCapitalize="none" />
-            {errors.submitted_by_email && <Text style={styles.errorText}>{errors.submitted_by_email}</Text>}
-          </View>
-
-          {/* Consent */}
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <TouchableOpacity style={styles.consentRow} onPress={() => setConsent(!consent)}>
-              <MaterialIcons name={consent ? 'check-box' : 'check-box-outline-blank'} size={24} color={consent ? colors.earth.gold : colors.textMuted} />
-              <Text style={[styles.consentText, { color: colors.text }]}>
-                I confirm that the information I have shared is truthful and I have the right to share this story and any accompanying media.
-              </Text>
-            </TouchableOpacity>
-            {errors.consent_confirmed && <Text style={styles.errorText}>{errors.consent_confirmed}</Text>}
-          </View>
-
-          {/* Submit */}
-          <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.earth.gold }]} onPress={handleSubmit} disabled={submitting}>
-            {submitting ? <ActivityIndicator color="#fff" /> : (
-              <>
-                <MaterialIcons name="send" size={20} color="#fff" />
-                <Text style={styles.submitBtnText}>Submit Story</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <View style={{ height: 40 }} />
+          {step === 0 && <InfoStep data={info} onChange={setInfo} errors={errors} />}
+          {step === 1 && <StoryStep data={story} onChange={setStory} errors={errors} />}
+          {step === 2 && <MediaStep data={media} onChange={setMedia} />}
+          {step === 3 && (
+            <ReviewStep
+              info={info}
+              story={story}
+              media={media}
+              consent={consent}
+              onConsentChange={setConsent}
+              errors={errors}
+            />
+          )}
         </ScrollView>
+
+        {/* Bottom navigation */}
+        <View style={[styles.navBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+          {step > 0 ? (
+            <TouchableOpacity style={[styles.navBtn, styles.backBtn, { borderColor: colors.border }]} onPress={goBack}>
+              <MaterialIcons name="arrow-back" size={18} color={colors.text} />
+              <Text style={[styles.navBtnText, { color: colors.text }]}>Back</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.navBtn} />
+          )}
+
+          {step < TOTAL_STEPS - 1 ? (
+            <TouchableOpacity style={[styles.navBtn, styles.nextBtn, { backgroundColor: colors.earth.gold }]} onPress={goNext}>
+              <Text style={styles.nextBtnText}>Continue</Text>
+              <MaterialIcons name="arrow-forward" size={18} color="#fff" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.navBtn, styles.nextBtn, { backgroundColor: colors.earth.gold }]}
+              onPress={handleSubmit}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <MaterialIcons name="send" size={18} color="#fff" />
+                  <Text style={styles.nextBtnText}>Submit Story</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
-  header: { alignItems: 'center', marginBottom: 20, paddingTop: 8 },
-  headerLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 4 },
-  headerTitle: { fontFamily: fonts.serif, fontSize: 26, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-  headerDesc: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
-  errorBanner: { backgroundColor: '#fef2f2', borderWidth: 1, borderColor: '#fecaca', borderRadius: 10, padding: 12, marginBottom: 12 },
+  scroll: { flex: 1 },
+  scrollContent: { padding: 16 },
+  errorBanner: {
+    backgroundColor: '#fef2f2', borderWidth: 1, borderColor: '#fecaca',
+    borderRadius: 10, padding: 12, marginBottom: 12,
+  },
   errorBannerText: { color: '#dc2626', fontSize: 13, textAlign: 'center' },
-  card: { borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 14 },
-  cardTitle: { fontFamily: fonts.serif, fontSize: 18, fontWeight: '700', marginBottom: 4 },
-  hint: { fontSize: 12, marginBottom: 10 },
-  label: { fontSize: 13, fontWeight: '600', marginTop: 10, marginBottom: 4 },
-  input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15 },
-  multiline: { minHeight: 60, textAlignVertical: 'top' },
-  storyInput: { minHeight: 140, textAlignVertical: 'top' },
-  errorText: { color: '#dc2626', fontSize: 12, marginTop: 2 },
-  mediaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  mediaThumb: { width: 80, height: 80, borderRadius: 10, overflow: 'hidden' },
-  mediaRemove: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10, padding: 2 },
-  addMedia: { width: 80, height: 80, borderRadius: 10, borderWidth: 1, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
-  addMediaText: { fontSize: 9, marginTop: 2 },
-  ytRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderWidth: 1, borderRadius: 8, marginBottom: 6 },
-  ytUrl: { flex: 1, fontSize: 12 },
-  ytInputRow: { flexDirection: 'row', gap: 8 },
-  addBtn: { borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' },
-  addBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  consentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  consentText: { flex: 1, fontSize: 13, lineHeight: 20 },
-  submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 16, borderRadius: 14, marginTop: 4 },
-  submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+
+  // Bottom nav
+  navBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingBottom: 30,
+    borderTopWidth: 1,
+    gap: 12,
+  },
+  navBtn: { flex: 1 },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  navBtnText: { fontSize: 15, fontWeight: '600' },
+  nextBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  nextBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+
+  // Success
   successContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  successTitle: { fontFamily: fonts.serif, fontSize: 28, fontWeight: '700', marginTop: 16, marginBottom: 8 },
+  successIcon: { width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  successTitle: { fontFamily: fonts.serif, fontSize: 28, fontWeight: '700', marginBottom: 8 },
   successText: { fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
   successBtn: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12 },
   successBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  headerLink: { fontSize: 16, fontWeight: '600' },
 });

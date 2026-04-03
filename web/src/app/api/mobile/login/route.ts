@@ -40,6 +40,8 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     token: authData.session.access_token,
+    refresh_token: authData.session.refresh_token,
+    expires_at: authData.session.expires_at,
     email: authData.user.email,
     role: admin.role,
     full_name: admin.full_name,
