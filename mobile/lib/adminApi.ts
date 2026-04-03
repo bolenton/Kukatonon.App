@@ -235,7 +235,7 @@ export async function updateAdminProfile(token: string, data: { full_name?: stri
 }
 
 // Upload
-export async function getUploadUrl(token: string, filename: string, contentType: string, type: 'image' | 'video') {
+export async function getUploadUrl(token: string, filename: string, contentType: string, type: 'image' | 'video' | 'audio') {
   return adminFetch(token, '/api/admin/upload', {
     method: 'POST',
     body: JSON.stringify({ filename, contentType, type }),
@@ -247,7 +247,7 @@ export async function uploadMedia(
   uri: string,
   filename: string,
   mimeType: string,
-  type: 'image' | 'video'
+  type: 'image' | 'video' | 'audio'
 ): Promise<string> {
   const { signedUrl, publicUrl } = await getUploadUrl(token, filename, mimeType, type);
 
