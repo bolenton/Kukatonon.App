@@ -1,8 +1,5 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import RichTextRenderer from "@/components/public/RichTextRenderer";
-import YouTubeEmbed from "@/components/public/YouTubeEmbed";
-import MediaGallery from "@/components/public/MediaGallery";
 import StoryBlockRenderer from "@/components/public/StoryBlockRenderer";
 import Link from "next/link";
 import type { PublicStory } from "@/types/database";
@@ -123,35 +120,28 @@ export default async function StoryDetailPage({
           </div>
         )}
 
-        {/* Block-based content (new) or legacy rendering */}
-        {story.content_blocks && story.content_blocks.length > 0 ? (
+        {/* Block-based content */}
+        {story.show_event_location && story.event_latitude != null && story.event_longitude != null && (
+          <div className="bg-earth-gold/5 border border-earth-gold/20 rounded-xl p-4 mb-10">
+            <div className="flex items-center gap-2 mb-1">
+              <svg className="w-4 h-4 text-earth-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-xs font-semibold uppercase tracking-wider text-earth-gold">Where It Happened</span>
+            </div>
+            {story.event_location_name && (
+              <p className="text-sm font-medium text-gray-900">{story.event_location_name}</p>
+            )}
+          </div>
+        )}
+
+        {story.content_blocks && story.content_blocks.length > 0 && (
           <div className="space-y-8 mb-10">
             {story.content_blocks.map((block) => (
               <StoryBlockRenderer key={block.id} block={block} />
             ))}
           </div>
-        ) : (
-          <>
-            {story.content_html && (
-              <div className="mb-10">
-                <RichTextRenderer html={story.content_html} />
-              </div>
-            )}
-
-            {story.youtube_urls && story.youtube_urls.length > 0 && (
-              <div className="space-y-6 mb-10">
-                {story.youtube_urls.map((url, index) => (
-                  <YouTubeEmbed key={index} url={url} />
-                ))}
-              </div>
-            )}
-
-            {story.media_items && story.media_items.length > 0 && (
-              <div className="mb-10">
-                <MediaGallery items={story.media_items} />
-              </div>
-            )}
-          </>
         )}
 
         {/* Back link */}

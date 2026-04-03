@@ -21,7 +21,8 @@ export default function ReviewStep({ info, story, media, consent, onConsentChang
 
   const hasText = story.storyText.length > 0;
   const hasAudio = !!story.audioUrl;
-  const hasVideo = story.videoParts.length > 0;
+  const hasVideo = story.videoParts.length > 0 || media.videos.length > 0;
+  const totalVideos = story.videoParts.length + media.videos.length;
   const hasImages = media.images.length > 0;
   const hasYouTube = media.youtubeUrls.length > 0;
   const hasLocation = !!media.eventLocation;
@@ -53,7 +54,7 @@ export default function ReviewStep({ info, story, media, consent, onConsentChang
           <View style={styles.contentChecks}>
             <ContentCheck label="Written text" active={hasText} detail={hasText ? `${story.storyText.length} characters` : undefined} colors={colors} />
             <ContentCheck label="Voice narration" active={hasAudio} colors={colors} />
-            <ContentCheck label="Video recording" active={hasVideo} detail={hasVideo ? `${story.videoParts.length} clip${story.videoParts.length > 1 ? 's' : ''}` : undefined} colors={colors} />
+            <ContentCheck label="Videos" active={hasVideo} detail={hasVideo ? `${totalVideos} clip${totalVideos > 1 ? 's' : ''}` : undefined} colors={colors} />
             <ContentCheck label="Photos" active={hasImages} detail={hasImages ? `${media.images.length} photo${media.images.length > 1 ? 's' : ''}` : undefined} colors={colors} />
             <ContentCheck label="YouTube links" active={hasYouTube} detail={hasYouTube ? `${media.youtubeUrls.length} link${media.youtubeUrls.length > 1 ? 's' : ''}` : undefined} colors={colors} />
             <ContentCheck label="Event location" active={hasLocation} detail={hasLocation ? media.eventLocation!.name || 'Pin placed' : undefined} colors={colors} />

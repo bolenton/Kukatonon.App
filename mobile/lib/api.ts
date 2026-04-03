@@ -6,7 +6,8 @@ export type ContentBlock =
   | { id: string; type: 'text'; html: string }
   | { id: string; type: 'image'; url: string; width?: number; height?: number; caption?: string }
   | { id: string; type: 'video'; url: string; caption?: string }
-  | { id: string; type: 'youtube'; url: string; caption?: string };
+  | { id: string; type: 'youtube'; url: string; caption?: string }
+  | { id: string; type: 'audio'; url: string; caption?: string };
 
 export interface PublicStory {
   id: string;
@@ -27,6 +28,7 @@ export interface PublicStory {
   event_latitude?: number | null;
   event_longitude?: number | null;
   event_location_name?: string | null;
+  show_event_location?: boolean;
 }
 
 export interface CategoryInfo {

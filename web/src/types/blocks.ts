@@ -1,4 +1,4 @@
-export type ContentBlockType = 'text' | 'image' | 'video' | 'youtube';
+export type ContentBlockType = 'text' | 'image' | 'video' | 'youtube' | 'audio';
 
 interface BaseBlock {
   id: string;
@@ -30,4 +30,10 @@ export interface YouTubeBlock extends BaseBlock {
   caption?: string;
 }
 
-export type ContentBlock = TextBlock | ImageBlock | VideoBlock | YouTubeBlock;
+export interface AudioBlock extends BaseBlock {
+  type: 'audio';
+  url: string;
+  caption?: string;
+}
+
+export type ContentBlock = TextBlock | ImageBlock | VideoBlock | YouTubeBlock | AudioBlock;

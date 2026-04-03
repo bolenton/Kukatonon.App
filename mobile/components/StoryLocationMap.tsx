@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../constants/ThemeContext';
 import { fonts } from '../constants/theme';
@@ -25,6 +25,7 @@ export default function StoryLocationMap({ latitude, longitude, locationName }: 
       <View style={styles.mapContainer}>
         <MapView
           style={styles.map}
+          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
           region={{
             latitude,
             longitude,

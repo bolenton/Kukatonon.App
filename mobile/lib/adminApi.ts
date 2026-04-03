@@ -2,6 +2,14 @@ import type { ContentBlock } from './api';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://kukatonon.app';
 
+// Module-level refresh function, set by AuthContext on mount
+let _refreshFn: (() => Promise<string | null>) | null = null;
+
+/** Called by AuthProvider to register the token refresh function */
+export function registerTokenRefresh(fn: () => Promise<string | null>) {
+  _refreshFn = fn;
+}
+
 export class AdminApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -11,15 +19,28 @@ export class AdminApiError extends Error {
 }
 
 export async function adminFetch(token: string, path: string, options?: RequestInit) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      'x-admin-token': `Bearer ${token}`,
-      ...(options?.headers || {}),
-    },
-  });
+  const doFetch = async (t: string) => {
+    return fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${t}`,
+        'x-admin-token': `Bearer ${t}`,
+        ...(options?.headers || {}),
+      },
+    });
+  };
+
+  let res = await doFetch(token);
+
+  // On 401, try refreshing the token and retry once
+  if (res.status === 401 && _refreshFn) {
+    const newToken = await _refreshFn();
+    if (newToken && newToken !== token) {
+      res = await doFetch(newToken);
+    }
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     console.error(`[adminApi] ${res.status} ${path}:`, body.error || body);
@@ -53,7 +74,7 @@ export interface AdminStory {
   summary: string | null;
   content_html: string | null;
   youtube_urls: string[];
-  media_items: { type: 'image' | 'video'; url: string; thumbnail_url?: string }[];
+  media_items: { type: 'image' | 'video' | 'audio'; url: string; thumbnail_url?: string }[];
   cover_image_url: string | null;
   content_blocks: unknown[] | null;
   category_ids: string[];
@@ -66,6 +87,10 @@ export interface AdminStory {
   submitted_by_email: string | null;
   review_notes: string | null;
   approver_name: string | null;
+  event_latitude: number | null;
+  event_longitude: number | null;
+  event_location_name: string | null;
+  show_event_location: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -117,6 +142,7 @@ export async function updateStoryMeta(token: string, id: string, fields: {
   is_featured?: boolean;
   content_blocks?: ContentBlock[] | null;
   cover_image_url?: string | null;
+  show_event_location?: boolean;
 }) {
   return adminFetch(token, `/api/admin/stories/${id}`, {
     method: 'PATCH',

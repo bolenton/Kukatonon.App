@@ -11,8 +11,8 @@ import {
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { Image } from 'expo-image';
 import RenderHtml from 'react-native-render-html';
-import { WebView } from 'react-native-webview';
 import YoutubePlayer from 'react-native-youtube-iframe';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fetchStory, type PublicStory, type ContentBlock } from '../../lib/api';
 import { extractVideoId } from '../../lib/youtube';
 import { colors as sc, fonts } from '../../constants/theme';
@@ -21,11 +21,13 @@ import ShareStory from '../../components/ShareStory';
 import BookmarkButton from '../../components/BookmarkButton';
 import StoryLocationMap from '../../components/StoryLocationMap';
 import AudioPlayer from '../../components/AudioPlayer';
+import VideoPlayer from '../../components/VideoPlayer';
 import OfflineBanner from '../../components/OfflineBanner';
 
 export default function StoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [story, setStory] = useState<PublicStory | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +68,6 @@ export default function StoryDetailScreen() {
 
   const images = story.media_items?.filter((m) => m.type === 'image') || [];
   const videos = story.media_items?.filter((m) => m.type === 'video') || [];
-  const audioItems = story.media_items?.filter((m) => m.type === 'audio') || [];
 
   return (
     <>
@@ -75,7 +76,10 @@ export default function StoryDetailScreen() {
           title: story.honoree_name,
         }}
       />
-      <ScrollView style={[styles.container, { backgroundColor: colors.bg }]}>
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.bg }]}
+        contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
+      >
         {/* Cover Image */}
         {story.cover_image_url ? (
           <View style={styles.coverContainer}>
@@ -114,14 +118,6 @@ export default function StoryDetailScreen() {
             })}
             {story.submitted_by_name ? ` \u00b7 by ${story.submitted_by_name}` : ''}
           </Text>
-          <View style={styles.metaActions}>
-            <BookmarkButton story={story} />
-            <ShareStory
-              storyId={story.id}
-              storySlug={story.slug}
-              honoreeName={story.honoree_name}
-            />
-          </View>
         </View>
 
         {offline && (
@@ -139,123 +135,65 @@ export default function StoryDetailScreen() {
 
         {/* Content — block-based or legacy */}
         {(() => { console.log('[StoryDetail] RENDER: content_blocks=', story.content_blocks?.length ?? 'null', 'using blocks:', !!(story.content_blocks && story.content_blocks.length > 0)); return null; })()}
-        {story.content_blocks && story.content_blocks.length > 0 ? (
-          story.content_blocks.map((block) => {
-            switch (block.type) {
-              case 'text':
-                return (
-                  <View key={block.id} style={styles.htmlContainer}>
-                    <RenderHtml
-                      contentWidth={width - 40}
-                      source={{ html: block.html }}
-                      baseStyle={{ fontSize: 15, lineHeight: 26, color: colors.earth.dark }}
-                      tagsStyles={htmlTagStyles}
-                    />
-                  </View>
-                );
-              case 'image':
-                return (
-                  <View key={block.id} style={styles.blockImageContainer}>
-                    <Pressable onPress={() => setSelectedImage(block.url)}>
-                      <Image
-                        source={{ uri: block.url }}
-                        style={styles.blockImage}
-                        contentFit="cover"
-                        transition={200}
-                      />
-                    </Pressable>
-                    {block.caption ? <Text style={styles.blockCaption}>{block.caption}</Text> : null}
-                  </View>
-                );
-              case 'video':
-                return (
-                  <View key={block.id} style={styles.blockMediaContainer}>
-                    <View style={styles.videoContainer}>
-                      <WebView source={{ uri: block.url }} style={styles.webview} allowsFullscreenVideo />
-                    </View>
-                    {block.caption ? <Text style={styles.blockCaption}>{block.caption}</Text> : null}
-                  </View>
-                );
-              case 'youtube': {
-                const vid = extractVideoId(block.url);
-                if (!vid) return null;
-                return (
-                  <View key={block.id} style={styles.blockMediaContainer}>
-                    <View style={styles.videoContainer}>
-                      <YoutubePlayer
-                        height={Math.round((width - 40) * 9 / 16)}
-                        videoId={vid}
-                        webViewProps={{ androidLayerType: 'hardware' }}
-                      />
-                    </View>
-                    {block.caption ? <Text style={styles.blockCaption}>{block.caption}</Text> : null}
-                  </View>
-                );
-              }
-            }
-          })
-        ) : (
-          <>
-            {/* Legacy fixed-order rendering */}
-            {story.content_html && (
-              <View style={styles.htmlContainer}>
-                <RenderHtml
-                  contentWidth={width - 40}
-                  source={{ html: story.content_html }}
-                  baseStyle={{ fontSize: 15, lineHeight: 26, color: colors.earth.dark }}
-                  tagsStyles={htmlTagStyles}
-                />
-              </View>
-            )}
-
-            {story.youtube_urls?.map((url, index) => {
-              const videoId = extractVideoId(url);
-              if (!videoId) return null;
+        {story.content_blocks?.map((block) => {
+          switch (block.type) {
+            case 'text':
               return (
-                <View key={index} style={styles.videoContainer}>
-                  <YoutubePlayer
-                    height={Math.round((width - 40) * 9 / 16)}
-                    videoId={videoId}
-                    webViewProps={{ androidLayerType: 'hardware' }}
+                <View key={block.id} style={styles.htmlContainer}>
+                  <RenderHtml
+                    contentWidth={width - 40}
+                    source={{ html: block.html }}
+                    baseStyle={{ fontSize: 15, lineHeight: 26, color: colors.earth.dark }}
+                    tagsStyles={htmlTagStyles}
                   />
                 </View>
               );
-            })}
-
-            {images.length > 0 && (
-              <View style={styles.galleryContainer}>
-                {images.map((item, index) => (
-                  <Pressable
-                    key={index}
-                    onPress={() => setSelectedImage(item.url)}
-                    style={styles.galleryImage}
-                  >
+            case 'image':
+              return (
+                <View key={block.id} style={styles.blockImageContainer}>
+                  <Pressable onPress={() => setSelectedImage(block.url)}>
                     <Image
-                      source={{ uri: item.url }}
-                      style={{ width: '100%', height: '100%' }}
+                      source={{ uri: block.url }}
+                      style={styles.blockImage}
                       contentFit="cover"
                       transition={200}
                     />
                   </Pressable>
-                ))}
-              </View>
-            )}
-
-            {videos.map((item, index) => (
-              <View key={index} style={styles.videoContainer}>
-                <WebView source={{ uri: item.url }} style={styles.webview} allowsFullscreenVideo />
-              </View>
-            ))}
-          </>
-        )}
-
-        {/* Audio Narration */}
-        {audioItems.map((item, index) => (
-          <AudioPlayer key={`audio-${index}`} url={item.url} />
-        ))}
+                  {block.caption ? <Text style={styles.blockCaption}>{block.caption}</Text> : null}
+                </View>
+              );
+            case 'video':
+              return (
+                <View key={block.id} style={styles.blockMediaContainer}>
+                  <VideoPlayer url={block.url} />
+                  {block.caption ? <Text style={styles.blockCaption}>{block.caption}</Text> : null}
+                </View>
+              );
+            case 'youtube': {
+              const vid = extractVideoId(block.url);
+              if (!vid) return null;
+              return (
+                <View key={block.id} style={styles.blockMediaContainer}>
+                  <View style={styles.videoContainer}>
+                    <YoutubePlayer
+                      height={Math.round((width - 40) * 9 / 16)}
+                      videoId={vid}
+                      webViewProps={{ androidLayerType: 'hardware' }}
+                    />
+                  </View>
+                  {block.caption ? <Text style={styles.blockCaption}>{block.caption}</Text> : null}
+                </View>
+              );
+            }
+            case 'audio':
+              return (
+                <AudioPlayer key={block.id} url={block.url} />
+              );
+          }
+        })}
 
         {/* Location Map */}
-        {story.event_latitude != null && story.event_longitude != null && (
+        {story.show_event_location && story.event_latitude != null && story.event_longitude != null && (
           <StoryLocationMap
             latitude={story.event_latitude}
             longitude={story.event_longitude}
@@ -263,8 +201,34 @@ export default function StoryDetailScreen() {
           />
         )}
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
+
+      <View
+        style={[
+          styles.floatingActionsWrap,
+          { paddingBottom: Math.max(insets.bottom, 12) },
+        ]}
+        pointerEvents="box-none"
+      >
+        <View
+          style={[
+            styles.floatingActions,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <BookmarkButton story={story} size={22} />
+          <View style={[styles.actionDivider, { backgroundColor: colors.border }]} />
+          <ShareStory
+            storyId={story.id}
+            storySlug={story.slug}
+            honoreeName={story.honoree_name}
+          />
+        </View>
+      </View>
 
       {/* Lightbox */}
       {selectedImage && (
@@ -298,8 +262,7 @@ const styles = StyleSheet.create({
   memoryLabel: { color: sc.earth.amber, fontSize: 10, fontWeight: '700', letterSpacing: 2, marginBottom: 6 },
   coverName: { fontFamily: fonts.serif, fontSize: 28, fontWeight: '700', color: sc.earth.cream, marginBottom: 4 },
   coverTitle: { fontSize: 15, color: sc.earth.cream, opacity: 0.9 },
-  meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, paddingBottom: 8 },
-  metaActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  meta: { padding: 20, paddingBottom: 8 },
   metaText: { fontSize: 12, color: sc.earth.warm, opacity: 0.6 },
   summaryContainer: { marginHorizontal: 20, marginBottom: 16, borderLeftWidth: 4, borderLeftColor: sc.earth.gold, paddingLeft: 14 },
   summaryText: { fontFamily: fonts.serif, fontSize: 16, fontStyle: 'italic', color: sc.earth.warm, lineHeight: 26 },
@@ -315,6 +278,30 @@ const styles = StyleSheet.create({
   blockImage: { width: '100%', aspectRatio: 16 / 10, borderRadius: 12 },
   blockCaption: { fontSize: 13, color: sc.earth.warm, opacity: 0.7, textAlign: 'center', marginTop: 6, fontStyle: 'italic' },
   blockMediaContainer: { marginBottom: 16 },
+  floatingActionsWrap: {
+    position: 'absolute',
+    right: 20,
+    bottom: 0,
+    alignItems: 'flex-end',
+  },
+  floatingActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+  actionDivider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+  },
 });
 
 const htmlTagStyles = {

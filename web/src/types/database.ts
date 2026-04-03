@@ -39,6 +39,7 @@ export interface Story {
   event_latitude: number | null;
   event_longitude: number | null;
   event_location_name: string | null;
+  show_event_location: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -91,6 +92,7 @@ export interface SubmissionPayload {
   event_latitude?: number;
   event_longitude?: number;
   event_location_name?: string;
+  show_event_location?: boolean;
 }
 
 export interface StoryCreatePayload {
@@ -109,4 +111,5 @@ export interface StoryCreatePayload {
 export interface StoryUpdatePayload extends Partial<StoryCreatePayload> {
   status?: StoryStatus;
   review_notes?: string;
+  show_event_location?: boolean;
 }

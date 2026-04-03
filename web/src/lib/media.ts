@@ -19,7 +19,7 @@ export function validateVideoFile(file: File): string | null {
   return null;
 }
 
-export function generateStoragePath(type: 'image' | 'video', filename: string): string {
+export function generateStoragePath(type: 'image' | 'video' | 'audio', filename: string): string {
   const timestamp = Date.now();
   const randomId = Math.random().toString(36).substring(2, 8);
   const ext = filename.split('.').pop()?.toLowerCase() || 'bin';

@@ -33,6 +33,11 @@
       },
       "package": "app.kukatonon.mobile",
       "edgeToEdgeEnabled": true,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCDN01bXbP37afoPinGD721xC7CcJZerAA"
+        }
+      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -61,7 +66,8 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-video"
     ],
     "extra": {
       "router": {},
