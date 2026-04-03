@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import { useTheme } from '../../constants/ThemeContext';
 import { fonts } from '../../constants/theme';
 import LocationPicker, { type LocationData } from '../LocationPicker';
@@ -16,8 +18,14 @@ interface MediaItem {
   url: string;
 }
 
+interface VideoItem {
+  url: string;
+  thumbnailUri?: string;
+}
+
 export interface MediaData {
   images: MediaItem[];
+  videos: VideoItem[];
   youtubeUrls: string[];
   eventLocation: LocationData | null;
 }
@@ -31,6 +39,7 @@ export default function MediaStep({ data, onChange }: MediaStepProps) {
   const { colors } = useTheme();
   const [youtubeInput, setYoutubeInput] = useState('');
   const [ytError, setYtError] = useState('');
+  const [uploadingCount, setUploadingCount] = useState(0);
 
   async function pickImages() {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -39,6 +48,9 @@ export default function MediaStep({ data, onChange }: MediaStepProps) {
       quality: 0.8,
     });
     if (result.canceled) return;
+
+    setUploadingCount(result.assets.length);
+    const newImages: MediaItem[] = [];
 
     for (const asset of result.assets) {
       try {
@@ -64,15 +76,72 @@ export default function MediaStep({ data, onChange }: MediaStepProps) {
           headers: { 'Content-Type': asset.mimeType || 'image/jpeg' },
         });
 
-        onChange({ ...data, images: [...data.images, { type: 'image', url: publicUrl }] });
+        newImages.push({ type: 'image', url: publicUrl });
       } catch {
         Alert.alert('Error', 'Failed to upload image');
+      } finally {
+        setUploadingCount((c) => c - 1);
       }
+    }
+
+    if (newImages.length > 0) {
+      onChange({ ...data, images: [...data.images, ...newImages] });
     }
   }
 
   function removeImage(index: number) {
     onChange({ ...data, images: data.images.filter((_, i) => i !== index) });
+  }
+
+  const [uploadingVideoCount, setUploadingVideoCount] = useState(0);
+
+  async function pickVideos() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+
+    setUploadingVideoCount(result.assets.length);
+    const newVideos: VideoItem[] = [];
+
+    for (const asset of result.assets) {
+      try {
+        const contentType = asset.mimeType || 'video/mp4';
+        const filename = asset.fileName || `video_${Date.now()}.mp4`;
+
+        const res = await fetch(`${API_BASE}/api/upload`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename, contentType, type: 'video' }),
+        });
+        const { signedUrl, publicUrl } = await res.json();
+
+        const file = { uri: asset.uri, name: filename, type: contentType } as unknown as Blob;
+        await fetch(signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': contentType } });
+
+        let thumbnailUri: string | undefined;
+        try {
+          const thumb = await VideoThumbnails.getThumbnailAsync(asset.uri, { time: 1000 });
+          thumbnailUri = thumb.uri;
+        } catch { /* not critical */ }
+
+        newVideos.push({ url: publicUrl, thumbnailUri });
+      } catch {
+        Alert.alert('Error', 'Failed to upload video');
+      } finally {
+        setUploadingVideoCount((c) => c - 1);
+      }
+    }
+
+    if (newVideos.length > 0) {
+      onChange({ ...data, videos: [...data.videos, ...newVideos] });
+    }
+  }
+
+  function removeVideo(index: number) {
+    onChange({ ...data, videos: data.videos.filter((_, i) => i !== index) });
   }
 
   function addYoutube() {
@@ -99,7 +168,7 @@ export default function MediaStep({ data, onChange }: MediaStepProps) {
         <Text style={[styles.cardLabel, { color: colors.earth.gold }]}>STEP 3 OF 4</Text>
         <Text style={[styles.cardTitle, { color: colors.text }]}>Add Photos & Details</Text>
         <Text style={[styles.cardDesc, { color: colors.textMuted }]}>
-          Add photos, YouTube links, or mark the location on a map.
+          Add photos, videos, YouTube links, or mark the location on a map.
         </Text>
 
         <Text style={[styles.label, { color: colors.textSecondary }]}>Photos</Text>
@@ -112,9 +181,61 @@ export default function MediaStep({ data, onChange }: MediaStepProps) {
               </TouchableOpacity>
             </View>
           ))}
-          <TouchableOpacity style={[styles.addImage, { borderColor: colors.border }]} onPress={pickImages}>
-            <MaterialIcons name="add-photo-alternate" size={28} color={colors.textMuted} />
-            <Text style={[styles.addImageText, { color: colors.textMuted }]}>Add Photos</Text>
+          {uploadingCount > 0 && (
+            <View style={[styles.addImage, { borderColor: colors.earth.gold }]}>
+              <ActivityIndicator size="small" color={colors.earth.gold} />
+              <Text style={[styles.addImageText, { color: colors.earth.gold }]}>
+                {uploadingCount} uploading
+              </Text>
+            </View>
+          )}
+          <TouchableOpacity
+            style={[styles.addImage, { borderColor: colors.border }]}
+            onPress={pickImages}
+            disabled={uploadingCount > 0}
+          >
+            <MaterialIcons name="add-photo-alternate" size={28} color={uploadingCount > 0 ? colors.border : colors.textMuted} />
+            <Text style={[styles.addImageText, { color: uploadingCount > 0 ? colors.border : colors.textMuted }]}>Add Photos</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Videos */}
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Videos</Text>
+        <View style={styles.imageGrid}>
+          {data.videos.map((item, i) => (
+            <View key={`vid-${i}`} style={styles.imageThumb}>
+              {item.thumbnailUri ? (
+                <Image source={{ uri: item.thumbnailUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+              ) : (
+                <View style={[styles.videoPlaceholder, { backgroundColor: colors.earth.brown }]}>
+                  <MaterialIcons name="videocam" size={22} color={colors.earth.gold} />
+                </View>
+              )}
+              <View style={styles.videoOverlay}>
+                <MaterialIcons name="play-circle-outline" size={22} color="#fff" />
+              </View>
+              <TouchableOpacity style={styles.imageRemove} onPress={() => removeVideo(i)}>
+                <MaterialIcons name="close" size={14} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          ))}
+          {uploadingVideoCount > 0 && (
+            <View style={[styles.addImage, { borderColor: colors.earth.gold }]}>
+              <ActivityIndicator size="small" color={colors.earth.gold} />
+              <Text style={[styles.addImageText, { color: colors.earth.gold }]}>
+                {uploadingVideoCount} uploading
+              </Text>
+            </View>
+          )}
+          <TouchableOpacity
+            style={[styles.addImage, { borderColor: colors.border }]}
+            onPress={pickVideos}
+            disabled={uploadingVideoCount > 0}
+          >
+            <MaterialIcons name="video-library" size={28} color={uploadingVideoCount > 0 ? colors.border : colors.textMuted} />
+            <Text style={[styles.addImageText, { color: uploadingVideoCount > 0 ? colors.border : colors.textMuted }]}>Add Videos</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -185,6 +306,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   addImageText: { fontSize: 9, marginTop: 2 },
+  videoPlaceholder: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
+  videoOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.25)' },
 
   // YouTube
   ytRow: {

@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, Modal, TextInput, StyleSheet, Pressable,
   KeyboardAvoidingView, Platform,
 } from 'react-native';
-import MapView, { Marker, type MapPressEvent, type Region } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent, type Region } from 'react-native-maps';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../constants/ThemeContext';
 import { fonts } from '../constants/theme';
@@ -72,6 +72,7 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
           <View style={styles.previewMapContainer}>
             <MapView
               style={styles.previewMap}
+              provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
               region={{
                 latitude: value.latitude,
                 longitude: value.longitude,
@@ -122,7 +123,7 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
       <Modal visible={showModal} animationType="slide" onRequestClose={() => setShowModal(false)}>
         <KeyboardAvoidingView
           style={[styles.modal, { backgroundColor: colors.bg }]}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           {/* Header */}
           <View style={[styles.modalHeader, { backgroundColor: colors.headerBg }]}>
@@ -148,6 +149,7 @@ export default function LocationPicker({ value, onChange }: LocationPickerProps)
           {/* Map */}
           <MapView
             style={styles.map}
+            provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
             initialRegion={
               tempPin
                 ? { ...tempPin, latitudeDelta: 0.5, longitudeDelta: 0.5 }

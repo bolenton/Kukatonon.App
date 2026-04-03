@@ -39,7 +39,7 @@ export default function SubmitStoryScreen() {
   });
 
   const [media, setMedia] = useState<MediaData>({
-    images: [], youtubeUrls: [], eventLocation: null,
+    images: [], videos: [], youtubeUrls: [], eventLocation: null,
   });
 
   const [consent, setConsent] = useState(false);
@@ -121,6 +121,9 @@ export default function SubmitStoryScreen() {
       mediaItems.push({ type: 'image', url: img.url });
     }
     for (const vid of story.videoParts) {
+      mediaItems.push({ type: 'video', url: vid.url });
+    }
+    for (const vid of media.videos) {
       mediaItems.push({ type: 'video', url: vid.url });
     }
     if (story.audioUrl) {

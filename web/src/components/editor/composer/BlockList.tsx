@@ -6,8 +6,6 @@ import BlockEditor from "./BlockEditor";
 interface BlockListProps {
   blocks: ContentBlock[];
   onChange: (blocks: ContentBlock[]) => void;
-  coverImageUrl: string;
-  onSetCover: (url: string) => void;
 }
 
 const typeLabels: Record<string, { label: string; color: string }> = {
@@ -15,9 +13,10 @@ const typeLabels: Record<string, { label: string; color: string }> = {
   image: { label: "Image", color: "bg-green-50 text-green-700" },
   video: { label: "Video", color: "bg-purple-50 text-purple-700" },
   youtube: { label: "YouTube", color: "bg-red-50 text-red-700" },
+  audio: { label: "Audio", color: "bg-orange-50 text-orange-700" },
 };
 
-export default function BlockList({ blocks, onChange, coverImageUrl, onSetCover }: BlockListProps) {
+export default function BlockList({ blocks, onChange }: BlockListProps) {
   function updateBlock(index: number, updated: ContentBlock) {
     const next = [...blocks];
     next[index] = updated;
@@ -94,8 +93,6 @@ export default function BlockList({ blocks, onChange, coverImageUrl, onSetCover 
               <BlockEditor
                 block={block}
                 onChange={(updated) => updateBlock(index, updated)}
-                coverImageUrl={coverImageUrl}
-                onSetCover={onSetCover}
               />
             </div>
           </div>
