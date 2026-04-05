@@ -143,6 +143,9 @@ export async function updateStoryMeta(token: string, id: string, fields: {
   content_blocks?: ContentBlock[] | null;
   cover_image_url?: string | null;
   show_event_location?: boolean;
+  event_latitude?: number | null;
+  event_longitude?: number | null;
+  event_location_name?: string | null;
 }) {
   return adminFetch(token, `/api/admin/stories/${id}`, {
     method: 'PATCH',

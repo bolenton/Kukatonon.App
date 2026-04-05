@@ -54,6 +54,7 @@ export async function fetchStories(params?: {
   featured?: boolean;
   search?: string;
   category?: string;
+  has_location?: boolean;
 }): Promise<StoriesResponse> {
   const searchParams = new URLSearchParams();
   if (params?.page) searchParams.set('page', String(params.page));
@@ -61,6 +62,7 @@ export async function fetchStories(params?: {
   if (params?.featured) searchParams.set('featured', 'true');
   if (params?.search) searchParams.set('search', params.search);
   if (params?.category) searchParams.set('category', params.category);
+  if (params?.has_location) searchParams.set('has_location', 'true');
 
   const cacheKey = searchParams.toString() || 'default';
 
@@ -80,12 +82,20 @@ export async function fetchStories(params?: {
     if (cached) return { ...cached, offline: true };
 
     // If searching/filtering offline, do it locally against all cached stories
-    if (params?.search || params?.category || params?.featured) {
+    if (params?.search || params?.category || params?.featured || params?.has_location) {
       const allStories = await getAllCachedStories();
       let filtered = allStories;
 
       if (params?.featured) {
         filtered = filtered.filter((s) => s.is_featured);
+      }
+      if (params?.has_location) {
+        filtered = filtered.filter(
+          (s) =>
+            s.show_event_location === true &&
+            s.event_latitude != null &&
+            s.event_longitude != null
+        );
       }
       if (params?.search) {
         const q = params.search.toLowerCase();

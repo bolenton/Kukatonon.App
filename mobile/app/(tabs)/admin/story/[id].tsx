@@ -22,6 +22,7 @@ import StatusBadge from '../../../../components/admin/StatusBadge';
 import AudioPlayer from '../../../../components/AudioPlayer';
 import StoryLocationMap from '../../../../components/StoryLocationMap';
 import VideoPlayer from '../../../../components/VideoPlayer';
+import LocationPicker, { type LocationData } from '../../../../components/LocationPicker';
 import RenderHtml from 'react-native-render-html';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { extractVideoId } from '../../../../lib/youtube';
@@ -41,6 +42,7 @@ export default function StoryReviewScreen() {
   const [reviewNotes, setReviewNotes] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
   const [showEventLocation, setShowEventLocation] = useState(false);
+  const [location, setLocation] = useState<LocationData | null>(null);
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
   const [coverUrl, setCoverUrl] = useState('');
@@ -66,6 +68,11 @@ export default function StoryReviewScreen() {
       setReviewNotes(s.review_notes || '');
       setIsFeatured(s.is_featured);
       setShowEventLocation(!!s.show_event_location);
+      setLocation(
+        s.event_latitude != null && s.event_longitude != null
+          ? { latitude: s.event_latitude, longitude: s.event_longitude, name: s.event_location_name || '' }
+          : null
+      );
       setSelectedCats(s.category_ids || []);
       setBlocks((s.content_blocks as ContentBlock[]) || []);
       setCoverUrl(s.cover_image_url || '');
@@ -194,7 +201,10 @@ export default function StoryReviewScreen() {
         review_notes: reviewNotes || undefined,
         category_ids: selectedCats,
         is_featured: isFeatured,
-        show_event_location: showEventLocation,
+        show_event_location: location ? showEventLocation : false,
+        event_latitude: location?.latitude ?? null,
+        event_longitude: location?.longitude ?? null,
+        event_location_name: location?.name?.trim() || null,
         content_blocks: blocks.length > 0 ? blocks : null,
         cover_image_url: coverUrl || null,
       });
@@ -229,6 +239,28 @@ export default function StoryReviewScreen() {
     else if (selectedCats.length < 5) setSelectedCats([...selectedCats, catId]);
   }
 
+  function sameLocation(a: LocationData | null, b: LocationData | null) {
+    if (!a || !b) return false;
+    return a.latitude === b.latitude && a.longitude === b.longitude && a.name === b.name;
+  }
+
+  function handleLocationChange(next: LocationData | null) {
+    if (!location || !next || sameLocation(location, next)) {
+      setLocation(next);
+      if (!next) setShowEventLocation(false);
+      return;
+    }
+
+    Alert.alert(
+      'Overwrite location?',
+      'This will overwrite the previous location for this story.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Overwrite', style: 'destructive', onPress: () => setLocation(next) },
+      ]
+    );
+  }
+
   const htmlTagStyles = {
     p: { marginBottom: 8 },
     h2: { fontFamily: fonts.serif, fontSize: 20, fontWeight: '700' as const },
@@ -243,7 +275,7 @@ export default function StoryReviewScreen() {
   const sourceImages = story.media_items?.filter(m => m.type === 'image') || [];
   const sourceVideos = story.media_items?.filter(m => m.type === 'video') || [];
   const sourceAudio = story.media_items?.filter(m => m.type === 'audio') || [];
-  const hasLocation = story.event_latitude != null && story.event_longitude != null;
+  const hasLocation = location != null;
 
   return (
     <>
@@ -314,21 +346,24 @@ export default function StoryReviewScreen() {
           </View>
         )}
 
-        {/* Location Map */}
-        {hasLocation && (
-          <View style={{ marginBottom: 8 }}>
-            <View style={styles.locationMeta}>
-              <Text style={[styles.locationMetaText, { color: colors.textSecondary }]}>
-                Submitted location {showEventLocation ? 'is enabled for the public story' : 'is hidden from the public story'}
-              </Text>
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Event Location</Text>
+          <LocationPicker value={location} onChange={handleLocationChange} />
+          {hasLocation && (
+            <View style={{ marginTop: 10 }}>
+              <View style={styles.locationMeta}>
+                <Text style={[styles.locationMetaText, { color: colors.textSecondary }]}>
+                  {showEventLocation ? 'Location is enabled for the public story' : 'Location is hidden from the public story'}
+                </Text>
+              </View>
+              <StoryLocationMap
+                latitude={location.latitude}
+                longitude={location.longitude}
+                locationName={location.name}
+              />
             </View>
-            <StoryLocationMap
-              latitude={story.event_latitude!}
-              longitude={story.event_longitude!}
-              locationName={story.event_location_name}
-            />
-          </View>
-        )}
+          )}
+        </View>
 
         {/* Source media button */}
         {(story.content_html || sourceImages.length > 0 || sourceVideos.length > 0 || sourceAudio.length > 0 || (story.youtube_urls?.length || 0) > 0) && (

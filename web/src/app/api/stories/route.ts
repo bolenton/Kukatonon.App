@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
   const featured = searchParams.get('featured');
   const category = searchParams.get('category');
   const search = searchParams.get('search')?.trim();
+  const hasLocation = searchParams.get('has_location');
   const offset = (page - 1) * limit;
 
   let query = supabase
@@ -37,6 +38,13 @@ export async function GET(request: NextRequest) {
 
   if (search) {
     query = query.or(`title.ilike.%${search}%,honoree_name.ilike.%${search}%,summary.ilike.%${search}%`);
+  }
+
+  if (hasLocation === 'true') {
+    query = query
+      .eq('show_event_location', true)
+      .not('event_latitude', 'is', null)
+      .not('event_longitude', 'is', null);
   }
 
   const { data, error, count } = await query;

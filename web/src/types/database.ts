@@ -106,6 +106,10 @@ export interface StoryCreatePayload {
   is_featured?: boolean;
   content_blocks?: ContentBlock[] | null;
   category_ids?: string[];
+  event_latitude?: number | null;
+  event_longitude?: number | null;
+  event_location_name?: string | null;
+  show_event_location?: boolean;
 }
 
 export interface StoryUpdatePayload extends Partial<StoryCreatePayload> {
