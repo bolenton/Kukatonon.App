@@ -68,27 +68,31 @@ function RootStack() {
         />
         <Stack.Screen
           name="story/[id]"
-          options={{
+          options={({ navigation }) => ({
             title: 'Memorial Story',
             headerBackButtonDisplayMode: 'minimal',
-            headerLeft: router.canGoBack() ? undefined : renderHomeHeaderLeft,
-          }}
+            // Only show the "home" fallback when there's literally no back
+            // stack (e.g. deep-link cold start). Evaluated per navigation so
+            // it correctly shows the native back chevron when the user got
+            // here from the Stories tab, Map, or another story.
+            headerLeft: navigation.canGoBack() ? undefined : renderHomeHeaderLeft,
+          })}
         />
         <Stack.Screen
           name="stories/[slug]"
-          options={{
+          options={({ navigation }) => ({
             title: 'Loading...',
             headerBackButtonDisplayMode: 'minimal',
-            headerLeft: router.canGoBack() ? undefined : renderHomeHeaderLeft,
-          }}
+            headerLeft: navigation.canGoBack() ? undefined : renderHomeHeaderLeft,
+          })}
         />
         <Stack.Screen
           name="submit"
-          options={{
+          options={({ navigation }) => ({
             title: 'Share a Story',
             headerBackButtonDisplayMode: 'minimal',
-            headerLeft: router.canGoBack() ? undefined : renderHomeHeaderLeft,
-          }}
+            headerLeft: navigation.canGoBack() ? undefined : renderHomeHeaderLeft,
+          })}
         />
         <Stack.Screen
           name="legal/[page]"
