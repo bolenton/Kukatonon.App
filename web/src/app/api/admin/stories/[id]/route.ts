@@ -45,6 +45,9 @@ export async function PATCH(
   if (body.youtube_urls !== undefined) updates.youtube_urls = body.youtube_urls;
   if (body.media_items !== undefined) updates.media_items = body.media_items;
   if (body.cover_image_url !== undefined) updates.cover_image_url = body.cover_image_url;
+  if (body.event_latitude !== undefined) updates.event_latitude = body.event_latitude;
+  if (body.event_longitude !== undefined) updates.event_longitude = body.event_longitude;
+  if (body.event_location_name !== undefined) updates.event_location_name = body.event_location_name?.trim() || null;
   if (body.is_featured !== undefined) updates.is_featured = body.is_featured;
   if (body.review_notes !== undefined) updates.review_notes = body.review_notes;
   if (body.category_ids !== undefined) updates.category_ids = body.category_ids;

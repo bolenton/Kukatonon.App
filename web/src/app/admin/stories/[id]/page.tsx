@@ -24,6 +24,9 @@ export default function AdminStoryDetailPage() {
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [showEventLocation, setShowEventLocation] = useState(false);
+  const [locationName, setLocationName] = useState("");
+  const [locationLatitude, setLocationLatitude] = useState("");
+  const [locationLongitude, setLocationLongitude] = useState("");
   const [reviewNotes, setReviewNotes] = useState("");
   const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
@@ -50,6 +53,9 @@ export default function AdminStoryDetailPage() {
       setCoverImageUrl(data.cover_image_url || "");
       setIsFeatured(data.is_featured);
       setShowEventLocation(!!data.show_event_location);
+      setLocationName(data.event_location_name || "");
+      setLocationLatitude(data.event_latitude != null ? String(data.event_latitude) : "");
+      setLocationLongitude(data.event_longitude != null ? String(data.event_longitude) : "");
       setReviewNotes(data.review_notes || "");
       setContentBlocks(data.content_blocks || []);
       setCategoryIds(data.category_ids || []);
@@ -84,6 +90,35 @@ export default function AdminStoryDetailPage() {
   }
 
   const handleSave = async () => {
+    const trimmedLocationName = locationName.trim();
+    const nextLatitude = locationLatitude.trim() === "" ? null : Number(locationLatitude);
+    const nextLongitude = locationLongitude.trim() === "" ? null : Number(locationLongitude);
+
+    const hasNextLocationInput =
+      trimmedLocationName.length > 0 || locationLatitude.trim() !== "" || locationLongitude.trim() !== "";
+
+    if ((nextLatitude != null && Number.isNaN(nextLatitude)) || (nextLongitude != null && Number.isNaN(nextLongitude))) {
+      setMessage("Location coordinates must be valid numbers");
+      return;
+    }
+
+    if ((nextLatitude == null) !== (nextLongitude == null)) {
+      setMessage("Location requires both latitude and longitude");
+      return;
+    }
+
+    const nextLocationName = trimmedLocationName || null;
+    const hasExistingLocation = story?.event_latitude != null && story?.event_longitude != null;
+    const isReplacingLocation =
+      hasExistingLocation &&
+      (story.event_latitude !== nextLatitude ||
+        story.event_longitude !== nextLongitude ||
+        (story.event_location_name || null) !== nextLocationName);
+
+    if (isReplacingLocation && !window.confirm("This will overwrite the previous location for this story. Continue?")) {
+      return;
+    }
+
     setSaving(true);
     setMessage("");
     const res = await fetch(`/api/admin/stories/${id}`, {
@@ -95,7 +130,10 @@ export default function AdminStoryDetailPage() {
         summary: summary || null,
         cover_image_url: coverImageUrl || null,
         is_featured: isFeatured,
-        show_event_location: showEventLocation,
+        show_event_location: nextLatitude != null && nextLongitude != null ? showEventLocation : false,
+        event_latitude: nextLatitude,
+        event_longitude: nextLongitude,
+        event_location_name: nextLocationName,
         review_notes: reviewNotes || null,
         content_blocks: contentBlocks.length > 0 ? contentBlocks : null,
         category_ids: categoryIds,
@@ -108,6 +146,10 @@ export default function AdminStoryDetailPage() {
       setMessage("Saved successfully");
       const updated = await res.json();
       setStory(updated);
+      setShowEventLocation(!!updated.show_event_location);
+      setLocationName(updated.event_location_name || "");
+      setLocationLatitude(updated.event_latitude != null ? String(updated.event_latitude) : "");
+      setLocationLongitude(updated.event_longitude != null ? String(updated.event_longitude) : "");
     } else {
       setMessage("Failed to save");
     }
@@ -148,6 +190,7 @@ export default function AdminStoryDetailPage() {
 
   const sourceImages = (story.media_items || []).filter((m) => m.type === "image");
   const hasSourceContent = story.content_html || (story.media_items?.length || 0) > 0 || (story.youtube_urls?.length || 0) > 0;
+  const hasLocation = locationLatitude.trim() !== "" && locationLongitude.trim() !== "";
 
   return (
     <div>
@@ -286,7 +329,7 @@ export default function AdminStoryDetailPage() {
               </button>
             </div>
 
-            {story.event_latitude != null && story.event_longitude != null && (
+            {hasLocation && (
               <div className="flex items-center gap-3">
                 <label className="text-sm font-medium text-gray-700">Show location</label>
                 <button
@@ -334,27 +377,62 @@ export default function AdminStoryDetailPage() {
             )}
           </div>
 
-          {/* Location info */}
-          {story.event_latitude != null && story.event_longitude != null && (
-            <div className="bg-white rounded-xl border p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <svg className="w-4 h-4 text-earth-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="text-xs font-semibold uppercase tracking-wider text-earth-gold">Event Location</span>
-              </div>
-              {story.event_location_name && (
-                <p className="text-sm font-medium text-gray-900 mb-1">{story.event_location_name}</p>
-              )}
-              <p className="text-xs text-gray-500">
-                {story.event_latitude.toFixed(4)}, {story.event_longitude.toFixed(4)}
-              </p>
-              <p className="text-xs text-gray-500 mt-2">
-                {showEventLocation ? "Visible on the public story page" : "Hidden from the public story page"}
-              </p>
+          {/* Location */}
+          <div className="bg-white rounded-xl border p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-earth-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-xs font-semibold uppercase tracking-wider text-earth-gold">Event Location</span>
             </div>
-          )}
+            <input
+              type="text"
+              value={locationName}
+              onChange={(e) => setLocationName(e.target.value)}
+              placeholder="Location name"
+              className="w-full px-4 py-2.5 rounded-lg border focus:border-earth-gold focus:ring-1 focus:ring-earth-gold outline-none"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="number"
+                step="any"
+                value={locationLatitude}
+                onChange={(e) => setLocationLatitude(e.target.value)}
+                placeholder="Latitude"
+                className="w-full px-4 py-2.5 rounded-lg border focus:border-earth-gold focus:ring-1 focus:ring-earth-gold outline-none"
+              />
+              <input
+                type="number"
+                step="any"
+                value={locationLongitude}
+                onChange={(e) => setLocationLongitude(e.target.value)}
+                placeholder="Longitude"
+                className="w-full px-4 py-2.5 rounded-lg border focus:border-earth-gold focus:ring-1 focus:ring-earth-gold outline-none"
+              />
+            </div>
+            {hasLocation ? (
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-xs text-gray-500">
+                  {showEventLocation ? "Visible on the public story page" : "Hidden from the public story page"}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocationName("");
+                    setLocationLatitude("");
+                    setLocationLongitude("");
+                    setShowEventLocation(false);
+                  }}
+                  className="text-xs font-medium text-red-600 hover:text-red-700"
+                >
+                  Clear location
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500">Add a location here to attach it to the story.</p>
+            )}
+          </div>
 
           {/* Story Content Editor */}
           <div>
