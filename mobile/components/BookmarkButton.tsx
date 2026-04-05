@@ -3,6 +3,7 @@ import { TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { isBookmarked, toggleBookmark } from '../lib/bookmarks';
 import { useTheme } from '../constants/ThemeContext';
+import { tapMedium, notifySuccess } from '../lib/haptics';
 import type { PublicStory } from '../lib/api';
 
 interface BookmarkButtonProps {
@@ -20,7 +21,9 @@ export default function BookmarkButton({ story, size = 20, onToggle }: BookmarkB
   }, [story.id]);
 
   async function handlePress() {
+    tapMedium();
     const newState = await toggleBookmark(story);
+    if (newState) notifySuccess();
     setSaved(newState);
     onToggle?.(newState);
   }

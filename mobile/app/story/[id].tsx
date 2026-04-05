@@ -189,7 +189,13 @@ export default function StoryDetailScreen() {
             }
             case 'audio':
               return (
-                <AudioPlayer key={block.id} url={block.url} />
+                <AudioPlayer
+                  key={block.id}
+                  url={block.url}
+                  title={story.title}
+                  honoreeName={story.honoree_name}
+                  artworkUrl={story.cover_image_url ?? undefined}
+                />
               );
           }
         })}

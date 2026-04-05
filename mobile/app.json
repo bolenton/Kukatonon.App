@@ -23,7 +23,11 @@
         "applinks:www.kukatonon.app"
       ],
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Kukatonon uses your location to center the map on where you are and show you the stories closest to you.",
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -67,7 +71,19 @@
     },
     "plugins": [
       "expo-router",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Kukatonon uses your location to show you the stories closest to you on the map."
+        }
+      ]
     ],
     "extra": {
       "router": {},

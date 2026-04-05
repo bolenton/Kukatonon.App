@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import MapView, { PROVIDER_GOOGLE, Region } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +20,8 @@ import OfflineBanner from '../../components/OfflineBanner';
 import { fetchStories, type PublicStory } from '../../lib/api';
 import { colors as staticColors, fonts } from '../../constants/theme';
 import { useTheme } from '../../constants/ThemeContext';
+import { haversineKm, formatDistance } from '../../lib/geo';
+import { tapLight, selectionTick } from '../../lib/haptics';
 
 const LIBERIA_REGION: Region = {
   latitude: 6.4281,
@@ -55,6 +58,11 @@ export default function MapScreen() {
   const [offline, setOffline] = useState(false);
   const [selectedStory, setSelectedStory] = useState<PublicStory | null>(null);
   const [region, setRegion] = useState<Region>(LIBERIA_REGION);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [locationGranted, setLocationGranted] = useState(false);
   const lastMarkerPressAt = useRef(0);
   const mapRef = useRef<MapView | null>(null);
 
@@ -164,6 +172,114 @@ export default function MapScreen() {
     loadMapStories();
   }, [loadMapStories]);
 
+  // Ask for foreground location on mount. If granted, read the device
+  // position (cached first for speed, then a fresh fix) so we can show the
+  // user dot and compute distance to each story. Denial is silent — the map
+  // still works, just without the "My Location" affordance.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (cancelled) return;
+        if (status !== 'granted') {
+          setLocationGranted(false);
+          return;
+        }
+        setLocationGranted(true);
+        const cached = await Location.getLastKnownPositionAsync();
+        if (!cancelled && cached) {
+          setUserLocation({
+            latitude: cached.coords.latitude,
+            longitude: cached.coords.longitude,
+          });
+        }
+        const fresh = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        if (!cancelled) {
+          setUserLocation({
+            latitude: fresh.coords.latitude,
+            longitude: fresh.coords.longitude,
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to get user location:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Find the story closest to the user, if we have both a fix and at least
+  // one story with coordinates. Used to render the "Nearest story" chip.
+  const nearestStory = useMemo(() => {
+    if (!userLocation || stories.length === 0) return null;
+    let closest: { story: PublicStory; km: number } | null = null;
+    for (const s of stories) {
+      if (s.event_latitude == null || s.event_longitude == null) continue;
+      const km = haversineKm(
+        userLocation.latitude,
+        userLocation.longitude,
+        s.event_latitude,
+        s.event_longitude
+      );
+      if (!closest || km < closest.km) {
+        closest = { story: s, km };
+      }
+    }
+    return closest;
+  }, [userLocation, stories]);
+
+  const handleMyLocationPress = useCallback(async () => {
+    tapLight();
+    try {
+      // Re-request in case the user changed permissions in Settings while
+      // the app was backgrounded.
+      const { status } = await Location.getForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        const req = await Location.requestForegroundPermissionsAsync();
+        if (req.status !== 'granted') return;
+        setLocationGranted(true);
+      }
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const next = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      };
+      setUserLocation(next);
+      mapRef.current?.animateToRegion(
+        {
+          ...next,
+          latitudeDelta: 0.15,
+          longitudeDelta: 0.15,
+        },
+        450
+      );
+    } catch (err) {
+      console.warn('My Location press failed:', err);
+    }
+  }, []);
+
+  const handleNearestPress = useCallback(() => {
+    if (!nearestStory) return;
+    selectionTick();
+    mapRef.current?.animateToRegion(
+      {
+        latitude: nearestStory.story.event_latitude as number,
+        longitude: nearestStory.story.event_longitude as number,
+        latitudeDelta: 0.1,
+        longitudeDelta: 0.1,
+      },
+      450
+    );
+    setSelectedStory(nearestStory.story);
+    lastMarkerPressAt.current = Date.now();
+  }, [nearestStory]);
+
   function handleMarkerPress(story: PublicStory) {
     lastMarkerPressAt.current = Date.now();
     console.log('[MapScreen] marker pressed', {
@@ -198,7 +314,8 @@ export default function MapScreen() {
         initialRegion={LIBERIA_REGION}
         onRegionChangeComplete={setRegion}
         onPress={handleMapPress}
-        showsUserLocation={false}
+        showsUserLocation={locationGranted}
+        showsMyLocationButton={false}
         showsCompass={true}
         showsScale={true}
       >
@@ -263,6 +380,64 @@ export default function MapScreen() {
             </Text>
           </View>
         </View>
+      )}
+
+      {/* Nearest story chip — only when we have user location */}
+      {nearestStory && !selectedStory && (
+        <Pressable
+          onPress={handleNearestPress}
+          style={[
+            styles.nearestChip,
+            {
+              top: insets.top + (offline ? 56 : 12),
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <MaterialIcons name="near-me" size={16} color={colors.earth.gold} />
+          <View style={styles.nearestText}>
+            <Text
+              style={[styles.nearestLabel, { color: colors.textSecondary }]}
+              numberOfLines={1}
+            >
+              Closest story · {formatDistance(nearestStory.km)}
+            </Text>
+            <Text
+              style={[styles.nearestTitle, { color: colors.text }]}
+              numberOfLines={1}
+            >
+              {nearestStory.story.honoree_name}
+            </Text>
+          </View>
+          <MaterialIcons
+            name="chevron-right"
+            size={18}
+            color={colors.textMuted}
+          />
+        </Pressable>
+      )}
+
+      {/* My Location button */}
+      {locationGranted && (
+        <Pressable
+          onPress={handleMyLocationPress}
+          style={[
+            styles.myLocationBtn,
+            {
+              bottom: selectedStory ? 104 : 24,
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
+          ]}
+          hitSlop={8}
+        >
+          <MaterialIcons
+            name="my-location"
+            size={22}
+            color={colors.earth.gold}
+          />
+        </Pressable>
       )}
 
       {/* Preview card */}
@@ -434,5 +609,52 @@ const styles = StyleSheet.create({
   previewLocation: {
     fontSize: 11,
     flex: 1,
+  },
+  nearestChip: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  nearestText: {
+    flex: 1,
+  },
+  nearestLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: 1,
+  },
+  nearestTitle: {
+    fontFamily: fonts.serif,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  myLocationBtn: {
+    position: 'absolute',
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
   },
 });

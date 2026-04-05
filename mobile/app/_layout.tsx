@@ -1,12 +1,32 @@
+import { useEffect } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Stack, router, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { setAudioModeAsync } from 'expo-audio';
 import { ThemeProvider, useTheme } from '../constants/ThemeContext';
 import { AuthProvider } from '../constants/AuthContext';
 
 function RootStack() {
   const { mode, colors } = useTheme();
+
+  // Configure the audio session once at app startup so voice narration keeps
+  // playing when the phone is locked or the user switches apps, and so the
+  // iOS lock screen / Control Center shows transport controls for whichever
+  // story the user is listening to.
+  useEffect(() => {
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: true,
+      // Lock-screen controls require 'doNotMix' on iOS — otherwise the OS
+      // may not associate the Now Playing info with our player.
+      interruptionMode: 'doNotMix',
+      allowsRecording: false,
+      shouldRouteThroughEarpiece: false,
+    }).catch((err) => {
+      console.warn('Failed to configure audio mode:', err);
+    });
+  }, []);
 
   function renderHomeHeaderLeft() {
     return (

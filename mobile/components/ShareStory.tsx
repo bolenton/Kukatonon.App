@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,10 @@ import {
   Share,
   StyleSheet,
   Pressable,
+  Platform,
 } from 'react-native';
 import QRCodeSvg from 'react-native-qrcode-svg';
+import { tapLight, selectionTick } from '../lib/haptics';
 
 // Type workaround for React 19 compatibility
 const QRCode = QRCodeSvg as unknown as React.ComponentType<{
@@ -28,41 +30,85 @@ interface ShareStoryProps {
   honoreeName: string;
 }
 
-export default function ShareStory({ storyId, storySlug, honoreeName }: ShareStoryProps) {
+export default function ShareStory({ storyId: _storyId, storySlug, honoreeName }: ShareStoryProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  // On iOS the native Share sheet must be presented AFTER the custom Modal
+  // has fully dismissed, otherwise UIKit has no presenter view controller
+  // and the share sheet silently fails. We stash the intent here and fire
+  // it from the Modal's onDismiss callback (iOS only — Android doesn't emit
+  // onDismiss and doesn't have the race, so it just runs inline).
+  const pendingActionRef = useRef<null | (() => void)>(null);
 
   const webUrl = `${WEB_BASE}/stories/${storySlug}`;
-  const deepLinkUrl = `kukatonon://story/${storyId}`;
   // QR encodes a universal link that falls back to web if app not installed
   const qrUrl = `${WEB_BASE}/stories/${storySlug}?ref=qr`;
 
-  async function handleShareLink() {
-    setShowMenu(false);
+  async function presentShareSheet() {
     try {
-      await Share.share({
-        message: `In memory of ${honoreeName} — read their story on Kukatonon: ${webUrl}`,
-        url: webUrl,
-      });
+      // On iOS, passing both `message` and `url` often duplicates the URL
+      // in the share sheet and some providers (Messages, Mail) only pick up
+      // one field cleanly. Send `message` (which already contains the URL)
+      // on iOS, and both on Android where the behavior is well-defined.
+      if (Platform.OS === 'ios') {
+        await Share.share({
+          message: `In memory of ${honoreeName} — read their story on Kukatonon: ${webUrl}`,
+        });
+      } else {
+        await Share.share({
+          message: `In memory of ${honoreeName} — read their story on Kukatonon: ${webUrl}`,
+          url: webUrl,
+        });
+      }
     } catch {
       // User cancelled
     }
   }
 
+  function handleShareLink() {
+    selectionTick();
+    if (Platform.OS === 'ios') {
+      // Defer until the Modal's onDismiss fires.
+      pendingActionRef.current = presentShareSheet;
+      setShowMenu(false);
+    } else {
+      setShowMenu(false);
+      presentShareSheet();
+    }
+  }
+
   function handleShowQR() {
+    selectionTick();
     setShowMenu(false);
     setShowQR(true);
+  }
+
+  function handleMenuDismiss() {
+    const action = pendingActionRef.current;
+    pendingActionRef.current = null;
+    if (action) action();
+  }
+
+  function openShareMenu() {
+    tapLight();
+    setShowMenu(true);
   }
 
   return (
     <>
       {/* Share button */}
-      <TouchableOpacity onPress={() => setShowMenu(true)} style={styles.shareButton}>
+      <TouchableOpacity onPress={openShareMenu} style={styles.shareButton}>
         <MaterialIcons name="share" size={20} color={colors.earth.gold} />
       </TouchableOpacity>
 
       {/* Share menu modal */}
-      <Modal visible={showMenu} transparent animationType="fade" onRequestClose={() => setShowMenu(false)}>
+      <Modal
+        visible={showMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMenu(false)}
+        onDismiss={handleMenuDismiss}
+      >
         <Pressable style={styles.backdrop} onPress={() => setShowMenu(false)}>
           <View style={styles.menuContainer}>
             <Text style={styles.menuTitle}>Share Story</Text>
