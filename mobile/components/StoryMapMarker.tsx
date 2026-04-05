@@ -5,11 +5,16 @@ import { Marker } from 'react-native-maps';
 import type { PublicStory } from '../lib/api';
 import { colors as staticColors, fonts } from '../constants/theme';
 
-// Google Maps on Android rasterizes the Marker's child view into a bitmap
-// icon. The decode+compose step lags behind Image.onLoad, so we need a
-// longer delay than iOS (which uses Apple Maps and commits faster).
-const FREEZE_DELAY_MS = Platform.OS === 'android' ? 600 : 150;
-const SAFETY_TIMEOUT_MS = Platform.OS === 'android' ? 4000 : 2000;
+// iOS Apple Maps captures the marker snapshot quickly once the image paints,
+// so we can freeze shortly after onLoad.
+const IOS_FREEZE_AFTER_LOAD_MS = 150;
+// Android Google Maps doesn't reliably re-snapshot on expo-image paint when
+// the image is already in the in-memory cache (onLoad fires synchronously
+// before GoogleMap has laid out the marker view). Instead of listening to
+// onLoad, we track view changes for a fixed window after mount — long
+// enough for GoogleMap to rasterize at least one post-layout frame.
+const ANDROID_TRACK_WINDOW_MS = 1200;
+const IOS_SAFETY_TIMEOUT_MS = 2000;
 
 interface StoryMapMarkerProps {
   story: PublicStory;
@@ -38,30 +43,33 @@ export default function StoryMapMarker({ story, onPress }: StoryMapMarkerProps) 
     frozenRef.current = false;
     setTracksViewChanges(true);
 
-    // Safety net: if `onLoad` never fires (already-cached fast path, network
-    // stall, etc.) freeze tracking after a max delay so markers don't stay in
-    // a permanently-tracking state.
-    const safety = setTimeout(() => {
+    // Android: hard-coded track window. Don't listen to onLoad because
+    // expo-image fires it synchronously from the in-memory cache before
+    // GoogleMap has laid out the marker view.
+    // iOS: just a safety timeout; onLoad handles the freeze faster.
+    const delay =
+      Platform.OS === 'android' ? ANDROID_TRACK_WINDOW_MS : IOS_SAFETY_TIMEOUT_MS;
+    const timer = setTimeout(() => {
       if (!frozenRef.current) {
         frozenRef.current = true;
         setTracksViewChanges(false);
       }
-    }, SAFETY_TIMEOUT_MS);
+    }, delay);
 
-    return () => clearTimeout(safety);
+    return () => clearTimeout(timer);
   }, [story.cover_image_url, hasImage]);
 
   const handleImageLoad = () => {
+    // Android: ignore — the useEffect timer owns freeze timing.
+    if (Platform.OS === 'android') return;
     if (frozenRef.current) return;
-    // setTimeout (not requestAnimationFrame) so the paint commits *before*
-    // we freeze the snapshot — rAF fires before the next paint, which was
-    // capturing blank circles. Android Google Maps needs a longer delay than
-    // iOS Apple Maps to commit the bitmap icon.
+    // iOS: setTimeout (not requestAnimationFrame) so the paint commits
+    // *before* we freeze the snapshot.
     setTimeout(() => {
       if (frozenRef.current) return;
       frozenRef.current = true;
       setTracksViewChanges(false);
-    }, FREEZE_DELAY_MS);
+    }, IOS_FREEZE_AFTER_LOAD_MS);
   };
 
   if (story.event_latitude == null || story.event_longitude == null) {
