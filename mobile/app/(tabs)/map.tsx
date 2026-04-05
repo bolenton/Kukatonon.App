@@ -1,18 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
   Pressable,
-  Image,
   Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import MapView, { PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Supercluster from 'supercluster';
 import StoryMapMarker from '../../components/StoryMapMarker';
+import StoryClusterMarker from '../../components/StoryClusterMarker';
 import OfflineBanner from '../../components/OfflineBanner';
 import { fetchStories, type PublicStory } from '../../lib/api';
 import { colors as staticColors, fonts } from '../../constants/theme';
@@ -25,6 +27,26 @@ const LIBERIA_REGION: Region = {
   longitudeDelta: 4.5,
 };
 
+// Supercluster configuration. `radius` is the pixel distance within which
+// markers get grouped; `maxZoom` is the zoom level above which clustering
+// stops and every marker renders individually.
+const CLUSTER_RADIUS = 60;
+const CLUSTER_MAX_ZOOM = 14;
+
+type StoryPointProps = { storyId: string };
+type ClusterFeature =
+  | GeoJSON.Feature<GeoJSON.Point, StoryPointProps>
+  | GeoJSON.Feature<
+      GeoJSON.Point,
+      Supercluster.ClusterProperties & { cluster: true }
+    >;
+
+// Derive a Google-Maps-style zoom level (0 = whole world, 20 = street level)
+// from a react-native-maps Region's longitudeDelta.
+function regionToZoom(region: Region): number {
+  return Math.round(Math.log2(360 / region.longitudeDelta));
+}
+
 export default function MapScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -32,6 +54,82 @@ export default function MapScreen() {
   const [loading, setLoading] = useState(true);
   const [offline, setOffline] = useState(false);
   const [selectedStory, setSelectedStory] = useState<PublicStory | null>(null);
+  const [region, setRegion] = useState<Region>(LIBERIA_REGION);
+  const lastMarkerPressAt = useRef(0);
+  const mapRef = useRef<MapView | null>(null);
+
+  // Build a Supercluster index whenever the stories change. Points are
+  // GeoJSON features keyed by story id, which we look up when rendering
+  // single-story markers.
+  const clusterIndex = useMemo(() => {
+    const points: GeoJSON.Feature<GeoJSON.Point, StoryPointProps>[] = stories
+      .filter(
+        (s) =>
+          s.event_latitude != null &&
+          s.event_longitude != null &&
+          s.show_event_location === true
+      )
+      .map((s) => ({
+        type: 'Feature',
+        properties: { storyId: s.id },
+        geometry: {
+          type: 'Point',
+          coordinates: [s.event_longitude as number, s.event_latitude as number],
+        },
+      }));
+
+    const index = new Supercluster<StoryPointProps>({
+      radius: CLUSTER_RADIUS,
+      maxZoom: CLUSTER_MAX_ZOOM,
+    });
+    index.load(points);
+    return index;
+  }, [stories]);
+
+  const storyById = useMemo(() => {
+    const map = new Map<string, PublicStory>();
+    for (const s of stories) map.set(s.id, s);
+    return map;
+  }, [stories]);
+
+  // Query the cluster index for whatever is currently visible. Bounds are a
+  // little generous to avoid popping at the edges as the user pans.
+  const visibleFeatures = useMemo<ClusterFeature[]>(() => {
+    if (stories.length === 0) return [];
+    const zoom = regionToZoom(region);
+    const west = region.longitude - region.longitudeDelta;
+    const east = region.longitude + region.longitudeDelta;
+    const south = region.latitude - region.latitudeDelta;
+    const north = region.latitude + region.latitudeDelta;
+    return clusterIndex.getClusters(
+      [west, south, east, north],
+      zoom
+    ) as ClusterFeature[];
+  }, [clusterIndex, region, stories.length]);
+
+  const handleClusterPress = useCallback(
+    (clusterId: number, longitude: number, latitude: number) => {
+      // Expand the cluster by animating to the zoom level at which its
+      // members break apart. Supercluster tells us exactly that level.
+      const expansionZoom = Math.min(
+        clusterIndex.getClusterExpansionZoom(clusterId),
+        20
+      );
+      // Convert zoom level back to a longitudeDelta so we can animateToRegion.
+      const nextDelta = 360 / Math.pow(2, expansionZoom);
+      mapRef.current?.animateToRegion(
+        {
+          latitude,
+          longitude,
+          latitudeDelta: nextDelta,
+          longitudeDelta: nextDelta,
+        },
+        350
+      );
+      lastMarkerPressAt.current = Date.now();
+    },
+    [clusterIndex]
+  );
 
   const loadMapStories = useCallback(async () => {
     try {
@@ -43,6 +141,16 @@ export default function MapScreen() {
           s.event_longitude != null &&
           s.show_event_location === true
       );
+      // expo-image's prefetch with memory-disk policy actually warms the
+      // in-memory bitmap cache (not just the HTTP/disk cache), so when the
+      // marker's <Image> mounts it reads synchronously and the Marker
+      // snapshot captures a painted image on first render.
+      const coverUrls = withLocation
+        .map((story) => story.cover_image_url)
+        .filter((url): url is string => !!url);
+      if (coverUrls.length > 0) {
+        await Image.prefetch(coverUrls, 'memory-disk');
+      }
       setStories(withLocation);
       setOffline(!!res.offline);
     } catch (err) {
@@ -57,10 +165,21 @@ export default function MapScreen() {
   }, [loadMapStories]);
 
   function handleMarkerPress(story: PublicStory) {
+    lastMarkerPressAt.current = Date.now();
+    console.log('[MapScreen] marker pressed', {
+      id: story.id,
+      honoree: story.honoree_name,
+      coverUrl: story.cover_image_url,
+    });
     setSelectedStory(story);
   }
 
   function handleMapPress() {
+    if (Date.now() - lastMarkerPressAt.current < 250) {
+      console.log('[MapScreen] map press ignored after marker press');
+      return;
+    }
+    console.log('[MapScreen] map pressed, clearing preview');
     setSelectedStory(null);
   }
 
@@ -73,21 +192,48 @@ export default function MapScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <MapView
+        ref={mapRef}
         style={styles.map}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         initialRegion={LIBERIA_REGION}
+        onRegionChangeComplete={setRegion}
         onPress={handleMapPress}
         showsUserLocation={false}
         showsCompass={true}
         showsScale={true}
       >
-        {stories.map((story) => (
-          <StoryMapMarker
-            key={story.id}
-            story={story}
-            onPress={() => handleMarkerPress(story)}
-          />
-        ))}
+        {visibleFeatures.map((feature) => {
+          const [longitude, latitude] = feature.geometry.coordinates;
+          const props = feature.properties as Supercluster.ClusterProperties & {
+            cluster?: boolean;
+          } & StoryPointProps;
+          if (props.cluster) {
+            return (
+              <StoryClusterMarker
+                key={`cluster-${props.cluster_id}`}
+                latitude={latitude}
+                longitude={longitude}
+                count={props.point_count}
+                onPress={() =>
+                  handleClusterPress(
+                    props.cluster_id as number,
+                    longitude,
+                    latitude
+                  )
+                }
+              />
+            );
+          }
+          const story = storyById.get(props.storyId);
+          if (!story) return null;
+          return (
+            <StoryMapMarker
+              key={story.id}
+              story={story}
+              onPress={() => handleMarkerPress(story)}
+            />
+          );
+        })}
       </MapView>
 
       {/* Offline banner */}
@@ -134,8 +280,10 @@ export default function MapScreen() {
         >
           {selectedStory.cover_image_url ? (
             <Image
-              source={{ uri: selectedStory.cover_image_url }}
+              source={selectedStory.cover_image_url}
               style={styles.previewImage}
+              contentFit="cover"
+              cachePolicy="memory-disk"
             />
           ) : (
             <View style={[styles.previewImage, styles.previewImageFallback]}>
