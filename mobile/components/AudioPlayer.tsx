@@ -1,16 +1,45 @@
+import { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../constants/ThemeContext';
+import { tapLight } from '../lib/haptics';
 
 interface AudioPlayerProps {
   url: string;
+  title?: string;
+  honoreeName?: string;
+  artworkUrl?: string;
 }
 
-export default function AudioPlayer({ url }: AudioPlayerProps) {
+export default function AudioPlayer({ url, title, honoreeName, artworkUrl }: AudioPlayerProps) {
   const { colors } = useTheme();
   const player = useAudioPlayer(url);
   const status = useAudioPlayerStatus(player);
+
+  // Register this player for iOS lock-screen / Control Center transport
+  // controls whenever metadata is available. Only one player at a time can
+  // own the lock screen, so we activate on mount and release on unmount.
+  useEffect(() => {
+    if (!title && !honoreeName) return;
+    try {
+      player.setActiveForLockScreen(true, {
+        title: title ?? 'Kukatonon Story',
+        artist: honoreeName ? `In memory of ${honoreeName}` : 'Kukatonon',
+        albumTitle: 'Kukatonon',
+        artworkUrl: artworkUrl,
+      });
+    } catch (err) {
+      console.warn('Failed to register lock screen controls:', err);
+    }
+    return () => {
+      try {
+        player.clearLockScreenControls();
+      } catch {
+        // player may already be disposed
+      }
+    };
+  }, [player, title, honoreeName, artworkUrl]);
 
   function formatTime(seconds: number) {
     const m = Math.floor(seconds / 60);
@@ -19,6 +48,7 @@ export default function AudioPlayer({ url }: AudioPlayerProps) {
   }
 
   function togglePlayback() {
+    tapLight();
     if (status.playing) {
       player.pause();
     } else {

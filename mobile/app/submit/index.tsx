@@ -12,6 +12,12 @@ import InfoStep, { type InfoData } from '../../components/submit/InfoStep';
 import StoryStep, { type StoryData } from '../../components/submit/StoryStep';
 import MediaStep, { type MediaData } from '../../components/submit/MediaStep';
 import ReviewStep from '../../components/submit/ReviewStep';
+import {
+  selectionTick,
+  tapMedium,
+  notifySuccess,
+  notifyError,
+} from '../../lib/haptics';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -90,13 +96,18 @@ export default function SubmitStoryScreen() {
   }
 
   function goNext() {
-    if (!validateStep(step)) return;
+    if (!validateStep(step)) {
+      notifyError();
+      return;
+    }
+    selectionTick();
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   }
 
   function goBack() {
+    selectionTick();
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setErrors({});
     setStep((s) => Math.max(s - 1, 0));
@@ -105,7 +116,11 @@ export default function SubmitStoryScreen() {
 
   // ─── Submit ───
   async function handleSubmit() {
-    if (!validateStep(3)) return;
+    if (!validateStep(3)) {
+      notifyError();
+      return;
+    }
+    tapMedium();
     setSubmitting(true);
     setErrors({});
 
@@ -150,6 +165,7 @@ export default function SubmitStoryScreen() {
       });
       const data = await res.json();
       if (!res.ok) {
+        notifyError();
         if (data.errors) {
           const map: Record<string, string> = {};
           data.errors.forEach((e: { field: string; message: string }) => {
@@ -164,8 +180,10 @@ export default function SubmitStoryScreen() {
         }
         return;
       }
+      notifySuccess();
       setSubmitted(true);
     } catch {
+      notifyError();
       setErrors({ form: 'Failed to submit. Please check your connection and try again.' });
     } finally {
       setSubmitting(false);
